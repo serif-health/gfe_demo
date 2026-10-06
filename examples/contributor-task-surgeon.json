@@ -1,0 +1,66 @@
+{
+  "resourceType": "Task",
+  "id": "contrib-task-surgeon-1",
+  "meta": {
+    "profile": [
+      "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-gfe-contributor-task"
+    ]
+  },
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/requestInitiationTime",
+      "valueInstant": "2026-10-06T09:10:00-04:00"
+    },
+    {
+      "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-Task.requestedPeriod",
+      "valuePeriod": {
+        "end": "2026-10-09T17:00:00-04:00"
+      }
+    },
+    {
+      "url": "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/plannedServicePeriod",
+      "valuePeriod": {
+        "start": "2026-11-20T08:00:00-05:00",
+        "end": "2026-11-20T12:00:00-05:00"
+      }
+    }
+  ],
+  "status": "requested",
+  "intent": "order",
+  "code": {
+    "coding": [
+      {
+        "system": "http://hl7.org/fhir/us/davinci-pct/CodeSystem/PCTGFERequestTypeCSTemporaryTrialUse",
+        "code": "gfe-contributor-task"
+      }
+    ]
+  },
+  "requester": {
+    "reference": "Organization/npi-1520397849",
+    "display": "Bedford Regional Medical Center"
+  },
+  "owner": {
+    "reference": "Practitioner/npi-1182940357",
+    "display": "Sam Cutter, MD",
+    "identifier": {
+      "system": "http://hl7.org/fhir/sid/us-npi",
+      "value": "1182940357"
+    }
+  },
+  "input": [
+    {
+      "type": {
+        "coding": [
+          {
+            "system": "http://hl7.org/fhir/us/davinci-pct/CodeSystem/PCTDocumentTypeTemporaryTrialUse",
+            "code": "gfe-information-bundle"
+          }
+        ]
+      },
+      "valueAttachment": {
+        "contentType": "application/fhir+json",
+        "data": "eyJyZXNvdXJjZVR5cGUiOiJCdW5kbGUiLCJpZCI6ImluZm8ta25lZS1zY29wZS0xIiwibWV0YSI6eyJwcm9maWxlIjpbImh0dHA6Ly9obDcub3JnL2ZoaXIvdXMvZGF2aW5jaS1wY3QvU3RydWN0dXJlRGVmaW5pdGlvbi9kYXZpbmNpLXBjdC1nZmUtaW5mb3JtYXRpb24tYnVuZGxlIl19LCJpZGVudGlmaWVyIjp7InN5c3RlbSI6Imh0dHA6Ly9leGFtcGxlLm9yZy9maGlyL2lkZW50aWZpZXJzL2J1bmRsZSIsInZhbHVlIjoiaW5mby1rbmVlLXNjb3BlLTEifSwidHlwZSI6ImNvbGxlY3Rpb24iLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTA2VDA5OjEwOjAwLTA0OjAwIiwiZW50cnkiOlt7ImZ1bGxVcmwiOiJodHRwOi8vZXhhbXBsZS5vcmcvZmhpci9QYXRpZW50L3BhdGllbnQzMDAzIiwicmVzb3VyY2UiOnsicmVzb3VyY2VUeXBlIjoiUGF0aWVudCIsImlkIjoicGF0aWVudDMwMDMiLCJtZXRhIjp7InByb2ZpbGUiOlsiaHR0cDovL2hsNy5vcmcvZmhpci91cy9jb3JlL1N0cnVjdHVyZURlZmluaXRpb24vdXMtY29yZS1wYXRpZW50fDcuMC4wIl19LCJpZGVudGlmaWVyIjpbeyJzeXN0ZW0iOiJodHRwOi8vZXhhbXBsZS5vcmcvaWRlbnRpZmllcnMvbXJuIiwidmFsdWUiOiJQQVRJRU5UMzAwMyJ9XSwibmFtZSI6W3sidGV4dCI6IkFsZXggUml2ZXJhIiwiZmFtaWx5IjoiUml2ZXJhIiwiZ2l2ZW4iOlsiQWxleCJdfV0sImdlbmRlciI6ImZlbWFsZSIsImJpcnRoRGF0ZSI6IjE5NzktMTEtMDIiLCJhZGRyZXNzIjpbeyJ0ZXh0IjoiNDEgR3JlYXQgUm9hZCwgQmVkZm9yZCBNQSAwMTczMCJ9XX19LHsiZnVsbFVybCI6Imh0dHA6Ly9leGFtcGxlLm9yZy9maGlyL0NvdmVyYWdlL2NvdmVyYWdlMzAwMyIsInJlc291cmNlIjp7InJlc291cmNlVHlwZSI6IkNvdmVyYWdlIiwiaWQiOiJjb3ZlcmFnZTMwMDMiLCJtZXRhIjp7InByb2ZpbGUiOlsiaHR0cDovL2hsNy5vcmcvZmhpci91cy9kYXZpbmNpLXBjdC9TdHJ1Y3R1cmVEZWZpbml0aW9uL2RhdmluY2ktcGN0LWNvdmVyYWdlIl19LCJleHRlbnNpb24iOlt7InVybCI6Imh0dHA6Ly9obDcub3JnL2ZoaXIvNS4wL1N0cnVjdHVyZURlZmluaXRpb24vZXh0ZW5zaW9uLUNvdmVyYWdlLmtpbmQiLCJ2YWx1ZUNvZGUiOiJpbnN1cmFuY2UifV0sInN0YXR1cyI6ImFjdGl2ZSIsInN1YnNjcmliZXJJZCI6IkFDTTc3ODg5OTAwMSIsImJlbmVmaWNpYXJ5Ijp7InJlZmVyZW5jZSI6IlBhdGllbnQvcGF0aWVudDMwMDMifSwicmVsYXRpb25zaGlwIjp7ImNvZGluZyI6W3sic3lzdGVtIjoiaHR0cDovL3Rlcm1pbm9sb2d5LmhsNy5vcmcvQ29kZVN5c3RlbS9zdWJzY3JpYmVyLXJlbGF0aW9uc2hpcCIsImNvZGUiOiJzZWxmIn1dfSwicGVyaW9kIjp7InN0YXJ0IjoiMjAyNi0wMS0wMSIsImVuZCI6IjIwMjYtMTItMzEifSwicGF5b3IiOlt7InJlZmVyZW5jZSI6Ik9yZ2FuaXphdGlvbi9wYXllci1hY21lIn1dLCJjbGFzcyI6W3sidHlwZSI6eyJjb2RpbmciOlt7InN5c3RlbSI6Imh0dHA6Ly90ZXJtaW5vbG9neS5obDcub3JnL0NvZGVTeXN0ZW0vY292ZXJhZ2UtY2xhc3MiLCJjb2RlIjoicGxhbiJ9XX0sInZhbHVlIjoiQWNtZSBITU8gR29sZCIsIm5hbWUiOiJBY21lIEhNTyBHb2xkIn1dfX0seyJmdWxsVXJsIjoiaHR0cDovL2V4YW1wbGUub3JnL2ZoaXIvT3JnYW5pemF0aW9uL3BheWVyLWFjbWUiLCJyZXNvdXJjZSI6eyJyZXNvdXJjZVR5cGUiOiJPcmdhbml6YXRpb24iLCJpZCI6InBheWVyLWFjbWUiLCJtZXRhIjp7InByb2ZpbGUiOlsiaHR0cDovL2hsNy5vcmcvZmhpci91cy9kYXZpbmNpLXBjdC9TdHJ1Y3R1cmVEZWZpbml0aW9uL2RhdmluY2ktcGN0LW9yZ2FuaXphdGlvbiJdfSwiaWRlbnRpZmllciI6W3sidHlwZSI6eyJjb2RpbmciOlt7InN5c3RlbSI6Imh0dHA6Ly90ZXJtaW5vbG9neS5obDcub3JnL0NvZGVTeXN0ZW0vdjItMDIwMyIsImNvZGUiOiJFVElOIn1dfSwidmFsdWUiOiJFVElOLTQ0MDAwMDEifV0sImFjdGl2ZSI6dHJ1ZSwidHlwZSI6W3siY29kaW5nIjpbeyJzeXN0ZW0iOiJodHRwOi8vdGVybWlub2xvZ3kuaGw3Lm9yZy9Db2RlU3lzdGVtL29yZ2FuaXphdGlvbi10eXBlIiwiY29kZSI6InBheSIsImRpc3BsYXkiOiJQYXllciJ9XX1dLCJuYW1lIjoiQWNtZSBIZWFsdGggUGxhbiJ9fSx7ImZ1bGxVcmwiOiJodHRwOi8vZXhhbXBsZS5vcmcvZmhpci9Pcmdhbml6YXRpb24vbnBpLTE1MjAzOTc4NDkiLCJyZXNvdXJjZSI6eyJyZXNvdXJjZVR5cGUiOiJPcmdhbml6YXRpb24iLCJpZCI6Im5waS0xNTIwMzk3ODQ5IiwibWV0YSI6eyJwcm9maWxlIjpbImh0dHA6Ly9obDcub3JnL2ZoaXIvdXMvZGF2aW5jaS1wY3QvU3RydWN0dXJlRGVmaW5pdGlvbi9kYXZpbmNpLXBjdC1vcmdhbml6YXRpb24iXX0sImlkZW50aWZpZXIiOlt7InN5c3RlbSI6Imh0dHA6Ly9obDcub3JnL2ZoaXIvc2lkL3VzLW5waSIsInZhbHVlIjoiMTUyMDM5Nzg0OSJ9XSwiYWN0aXZlIjp0cnVlLCJ0eXBlIjpbeyJjb2RpbmciOlt7InN5c3RlbSI6Imh0dHA6Ly90ZXJtaW5vbG9neS5obDcub3JnL0NvZGVTeXN0ZW0vb3JnYW5pemF0aW9uLXR5cGUiLCJjb2RlIjoicHJvdiIsImRpc3BsYXkiOiJIZWFsdGhjYXJlIFByb3ZpZGVyIn1dfV0sIm5hbWUiOiJCZWRmb3JkIFJlZ2lvbmFsIE1lZGljYWwgQ2VudGVyIn19LHsiZnVsbFVybCI6Imh0dHA6Ly9leGFtcGxlLm9yZy9maGlyL1NlcnZpY2VSZXF1ZXN0L3NyLWtuZWUtc2NvcGUiLCJyZXNvdXJjZSI6eyJyZXNvdXJjZVR5cGUiOiJTZXJ2aWNlUmVxdWVzdCIsImlkIjoic3Ita25lZS1zY29wZSIsIm1ldGEiOnsicHJvZmlsZSI6WyJodHRwOi8vaGw3Lm9yZy9maGlyL3VzL2RhdmluY2ktcGN0L1N0cnVjdHVyZURlZmluaXRpb24vZGF2aW5jaS1wY3Qtc2VydmljZXJlcXVlc3QiXX0sInN0YXR1cyI6ImFjdGl2ZSIsImludGVudCI6InByb3Bvc2FsIiwiY29kZSI6eyJjb2RpbmciOlt7InN5c3RlbSI6Imh0dHA6Ly93d3cuYW1hLWFzc24ub3JnL2dvL2NwdCIsImNvZGUiOiIyOTg4MSIsImRpc3BsYXkiOiJBcnRocm9zY29weSwga25lZSwgc3VyZ2ljYWw7IHdpdGggbWVuaXNjZWN0b215IChtZWRpYWwgT1IgbGF0ZXJhbCkifV19LCJzdWJqZWN0Ijp7InJlZmVyZW5jZSI6IlBhdGllbnQvcGF0aWVudDMwMDMifSwib2NjdXJyZW5jZURhdGVUaW1lIjoiMjAyNi0xMS0yMCIsInBlcmZvcm1lciI6W3sicmVmZXJlbmNlIjoiT3JnYW5pemF0aW9uL25waS0xNTIwMzk3ODQ5In1dLCJyZWFzb25Db2RlIjpbeyJjb2RpbmciOlt7InN5c3RlbSI6Imh0dHA6Ly9obDcub3JnL2ZoaXIvc2lkL2ljZC0xMC1jbSIsImNvZGUiOiJNMjMuMjIxIiwiZGlzcGxheSI6IkRlcmFuZ2VtZW50IG9mIHBvc3RlcmlvciBob3JuIG9mIG1lZGlhbCBtZW5pc2N1cyBkdWUgdG8gb2xkIHRlYXIsIHJpZ2h0IGtuZWUifV19XX19XX0="
+      }
+    }
+  ]
+}

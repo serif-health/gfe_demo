@@ -1,0 +1,124 @@
+{
+  "resourceType": "Bundle",
+  "id": "info-brain-mri-selfpay-1",
+  "meta": {
+    "profile": [
+      "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-gfe-information-bundle"
+    ]
+  },
+  "identifier": {
+    "system": "http://example.org/fhir/identifiers/bundle",
+    "value": "info-brain-mri-selfpay-1"
+  },
+  "type": "collection",
+  "timestamp": "2026-10-06T09:05:00-04:00",
+  "entry": [
+    {
+      "fullUrl": "http://example.org/fhir/Patient/patient2002",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "patient2002",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient|7.0.0"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "http://example.org/identifiers/mrn",
+            "value": "PATIENT2002"
+          }
+        ],
+        "name": [
+          {
+            "text": "Riley Cashman",
+            "family": "Cashman",
+            "given": [
+              "Riley"
+            ]
+          }
+        ],
+        "gender": "male",
+        "birthDate": "1988-03-14",
+        "address": [
+          {
+            "text": "9 Muzzey Street, Lexington MA 02421"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/Organization/npi-1620483911",
+      "resource": {
+        "resourceType": "Organization",
+        "id": "npi-1620483911",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-organization"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "http://hl7.org/fhir/sid/us-npi",
+            "value": "1620483911"
+          }
+        ],
+        "active": true,
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                "code": "prov",
+                "display": "Healthcare Provider"
+              }
+            ]
+          }
+        ],
+        "name": "Lexington Imaging Center"
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/ServiceRequest/sr-brain-mri",
+      "resource": {
+        "resourceType": "ServiceRequest",
+        "id": "sr-brain-mri",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-servicerequest"
+          ]
+        },
+        "status": "active",
+        "intent": "proposal",
+        "code": {
+          "coding": [
+            {
+              "system": "http://www.ama-assn.org/go/cpt",
+              "code": "70551",
+              "display": "Magnetic resonance (eg, proton) imaging, brain (including brain stem); without contrast material"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/patient2002"
+        },
+        "performer": [
+          {
+            "reference": "Organization/npi-1620483911"
+          }
+        ],
+        "reasonCode": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/sid/icd-10-cm",
+                "code": "R51.9",
+                "display": "Headache, unspecified"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

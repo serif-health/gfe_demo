@@ -1,0 +1,244 @@
+{
+  "resourceType" : "Bundle",
+  "id" : "PCT-GFE-Information-Bundle-1",
+  "meta" : {
+    "profile" : ["http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-gfe-information-bundle"]
+  },
+  "identifier" : {
+    "system" : "http://example.com/identifiers/bundle",
+    "value" : "59688475-2324-3242-2347384711"
+  },
+  "type" : "collection",
+  "timestamp" : "2024-03-27T11:01:00+05:00",
+  "entry" : [{
+    "fullUrl" : "http://example.org/fhir/Patient/patient1001",
+    "resource" : {
+      "resourceType" : "Patient",
+      "id" : "patient1001",
+      "meta" : {
+        "profile" : ["http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient|7.0.0"]
+      },
+      "text" : {
+        "status" : "additional",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"Patient_patient1001\"> </a><p style=\"border: 1px #661aff solid; background-color: #e6e6ff; padding: 10px;\"><b>Eve Betterhalf</b> female, DoB: 1955-07-23 ( <code>http://example.com/identifiers/patient</code>/1001)</p><hr/><table class=\"grid\"><tr><td style=\"background-color: #f3f5da\" title=\"Known Marital status of Patient\">Marital Status:</td><td colspan=\"3\"><span title=\"Codes: {http://terminology.hl7.org/CodeSystem/v3-MaritalStatus U}\">unmarried</span></td></tr><tr><td style=\"background-color: #f3f5da\" title=\"Ways to contact the Patient\">Contact Details:</td><td colspan=\"3\"><ul><li>ph: 781-949-4949(MOBILE)</li><li>222 Burlington Road, Bedford MA 01730</li></ul></td></tr><tr><td style=\"background-color: #f3f5da\" title=\"Languages spoken\">Language:</td><td colspan=\"3\"><span title=\"Codes: {urn:ietf:bcp:47 en-US}\">English (United States)</span> (preferred)</td></tr></table></div>"
+      },
+      "identifier" : [{
+        "system" : "http://example.com/identifiers/patient",
+        "value" : "1001"
+      }],
+      "name" : [{
+        "text" : "Eve Betterhalf",
+        "family" : "Betterhalf",
+        "given" : ["Eve"]
+      }],
+      "telecom" : [{
+        "system" : "phone",
+        "value" : "781-949-4949",
+        "use" : "mobile"
+      }],
+      "gender" : "female",
+      "birthDate" : "1955-07-23",
+      "address" : [{
+        "text" : "222 Burlington Road, Bedford MA 01730"
+      }],
+      "maritalStatus" : {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/v3-MaritalStatus",
+          "code" : "U",
+          "display" : "unmarried"
+        }]
+      },
+      "communication" : [{
+        "language" : {
+          "coding" : [{
+            "system" : "urn:ietf:bcp:47",
+            "code" : "en-US",
+            "display" : "English (United States)"
+          }]
+        },
+        "preferred" : true
+      }]
+    }
+  },
+  {
+    "fullUrl" : "http://example.org/fhir/Coverage/coverage1001",
+    "resource" : {
+      "resourceType" : "Coverage",
+      "id" : "coverage1001",
+      "meta" : {
+        "profile" : ["http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-coverage"]
+      },
+      "text" : {
+        "status" : "extensions",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"Coverage_coverage1001\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Coverage coverage1001</b></p><a name=\"coverage1001\"> </a><a name=\"hccoverage1001\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\"/><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-davinci-pct-coverage.html\">PCT Coverage</a></p></div><p><b>Extension Definition for Coverage.kind for Version 5.0</b>: insurance</p><p><b>status</b>: Active</p><p><b>subscriberId</b>: PFP123450000</p><p><b>beneficiary</b>: <a href=\"Patient-patient1001.html\">Eve Betterhalf Female, DoB: 1955-07-23 ( http://example.com/identifiers/patient#1001)</a></p><p><b>relationship</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/subscriber-relationship self}\">Self</span></p><p><b>period</b>: 2021-01-01 --&gt; 2022-01-01</p><p><b>payor</b>: <a href=\"Organization-org1001.html\">Organization Umbrella Insurance Company</a></p><h3>Classes</h3><table class=\"grid\"><tr><td style=\"display: none\">-</td><td><b>Type</b></td><td><b>Value</b></td><td><b>Name</b></td></tr><tr><td style=\"display: none\">*</td><td><span title=\"Codes:{http://terminology.hl7.org/CodeSystem/coverage-class plan}\">Plan</span></td><td>Premim Family Plus</td><td>Premim Family Plus Plan</td></tr></table><h3>CostToBeneficiaries</h3><table class=\"grid\"><tr><td style=\"display: none\">-</td><td><b>Type</b></td><td><b>Value[x]</b></td></tr><tr><td style=\"display: none\">*</td><td><span title=\"Codes:{http://terminology.hl7.org/CodeSystem/coverage-copay-type copaypct}\">Copay Percentage</span></td><td>20</td></tr></table></div>"
+      },
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/5.0/StructureDefinition/extension-Coverage.kind",
+        "valueCode" : "insurance"
+      }],
+      "status" : "active",
+      "subscriberId" : "PFP123450000",
+      "beneficiary" : {
+        "reference" : "Patient/patient1001"
+      },
+      "relationship" : {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/subscriber-relationship",
+          "code" : "self",
+          "display" : "Self"
+        }]
+      },
+      "period" : {
+        "start" : "2021-01-01",
+        "end" : "2022-01-01"
+      },
+      "payor" : [{
+        "reference" : "Organization/org1001"
+      }],
+      "class" : [{
+        "type" : {
+          "coding" : [{
+            "system" : "http://terminology.hl7.org/CodeSystem/coverage-class",
+            "code" : "plan",
+            "display" : "Plan"
+          }]
+        },
+        "value" : "Premim Family Plus",
+        "name" : "Premim Family Plus Plan"
+      }],
+      "costToBeneficiary" : [{
+        "type" : {
+          "coding" : [{
+            "system" : "http://terminology.hl7.org/CodeSystem/coverage-copay-type",
+            "code" : "copaypct",
+            "display" : "Copay Percentage"
+          }]
+        },
+        "valueQuantity" : {
+          "value" : 20
+        }
+      }]
+    }
+  },
+  {
+    "fullUrl" : "http://example.org/fhir/Organization/org1001",
+    "resource" : {
+      "resourceType" : "Organization",
+      "id" : "org1001",
+      "meta" : {
+        "profile" : ["http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-organization"]
+      },
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"Organization_org1001\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Organization org1001</b></p><a name=\"org1001\"> </a><a name=\"hcorg1001\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\"/><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-davinci-pct-organization.html\">PCT Organization</a></p></div><p><b>identifier</b>: Electronic Transmitter Identification Number/ETIN-3200002</p><p><b>active</b>: true</p><p><b>type</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/organization-type pay}\">Payer</span></p><p><b>name</b>: Umbrella Insurance Company</p><p><b>telecom</b>: ph: 860-547-5001(Work)</p><p><b>address</b>: 680 Asylum Street Hartford CT 06155 US </p></div>"
+      },
+      "identifier" : [{
+        "type" : {
+          "coding" : [{
+            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+            "code" : "ETIN"
+          }]
+        },
+        "value" : "ETIN-3200002"
+      }],
+      "active" : true,
+      "type" : [{
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/organization-type",
+          "code" : "pay",
+          "display" : "Payer"
+        }]
+      }],
+      "name" : "Umbrella Insurance Company",
+      "telecom" : [{
+        "system" : "phone",
+        "value" : "860-547-5001",
+        "use" : "work"
+      }],
+      "address" : [{
+        "line" : ["680 Asylum Street"],
+        "city" : "Hartford",
+        "state" : "CT",
+        "postalCode" : "06155",
+        "country" : "US"
+      }]
+    }
+  },
+  {
+    "id" : "PCT-ServiceLocation-1",
+    "fullUrl" : "http://example.org/fhir/Location/PCT-ServiceLocation-1",
+    "resource" : {
+      "resourceType" : "Location",
+      "id" : "PCT-ServiceLocation-1",
+      "meta" : {
+        "profile" : ["http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-service-location"]
+      },
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"Location_PCT-ServiceLocation-1\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Location PCT-ServiceLocation-1</b></p><a name=\"PCT-ServiceLocation-1\"> </a><a name=\"hcPCT-ServiceLocation-1\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\"/><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-davinci-pct-service-location.html\">PCT Service Location</a></p></div><p><b>status</b>: Active</p><p><b>name</b>: Hospital</p><p><b>type</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/v3-RoleCode HOSP}\">Hospital</span></p></div>"
+      },
+      "status" : "active",
+      "name" : "Hospital",
+      "type" : [{
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+          "code" : "HOSP",
+          "display" : "Hospital"
+        }]
+      }]
+    }
+  },
+  {
+    "id" : "PCT-ServiceRequest-1",
+    "fullUrl" : "http://example.org/fhir/ServiceRequest/PCT-ServiceRequest-1",
+    "resource" : {
+      "resourceType" : "ServiceRequest",
+      "id" : "PCT-ServiceRequest-1",
+      "meta" : {
+        "profile" : ["http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-servicerequest"]
+      },
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"ServiceRequest_PCT-ServiceRequest-1\"> </a><p class=\"res-header-id\"><b>Generated Narrative: ServiceRequest PCT-ServiceRequest-1</b></p><a name=\"PCT-ServiceRequest-1\"> </a><a name=\"hcPCT-ServiceRequest-1\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\"/><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-davinci-pct-servicerequest.html\">PCT GFE ServiceRequest</a></p></div><p><b>status</b>: Active</p><p><b>intent</b>: Proposal</p><p><b>code</b>: <span title=\"Codes:{http://www.ama-assn.org/go/cpt 73722}\">Magnetic resonance (eg, proton) imaging, any joint of lower extremity; with contrast material(s)</span></p><p><b>subject</b>: <a href=\"Patient-patient1001.html\">Eve Betterhalf Female, DoB: 1955-07-23 ( http://example.com/identifiers/patient#1001)</a></p></div>"
+      },
+      "status" : "active",
+      "intent" : "proposal",
+      "code" : {
+        "coding" : [{
+          "system" : "http://www.ama-assn.org/go/cpt",
+          "code" : "73722",
+          "display" : "Magnetic resonance (eg, proton) imaging, any joint of lower extremity; with contrast material(s)"
+        }]
+      },
+      "subject" : {
+        "reference" : "Patient/patient1001"
+      }
+    }
+  },
+  {
+    "id" : "PCT-DeviceRequest-1",
+    "fullUrl" : "http://example.org/fhir/DeviceRequest/PCT-DeviceRequest-1",
+    "resource" : {
+      "resourceType" : "DeviceRequest",
+      "id" : "PCT-DeviceRequest-1",
+      "meta" : {
+        "profile" : ["http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-devicerequest"]
+      },
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"DeviceRequest_PCT-DeviceRequest-1\"> </a><p class=\"res-header-id\"><b>Generated Narrative: DeviceRequest PCT-DeviceRequest-1</b></p><a name=\"PCT-DeviceRequest-1\"> </a><a name=\"hcPCT-DeviceRequest-1\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\"/><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-davinci-pct-devicerequest.html\">PCT GFE DeviceRequest</a></p></div><p><b>status</b>: Active</p><p><b>intent</b>: Proposal</p><p><b>code</b>: <span title=\"Codes:{http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets L1820}\">otherwise customized to fit a specific patient by an individual with expertise</span></p><p><b>subject</b>: <a href=\"Patient-patient1001.html\">Eve Betterhalf Female, DoB: 1955-07-23 ( http://example.com/identifiers/patient#1001)</a></p></div>"
+      },
+      "status" : "active",
+      "intent" : "proposal",
+      "codeCodeableConcept" : {
+        "coding" : [{
+          "system" : "http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets",
+          "code" : "L1820"
+        }]
+      },
+      "subject" : {
+        "reference" : "Patient/patient1001"
+      }
+    }
+  }]
+}

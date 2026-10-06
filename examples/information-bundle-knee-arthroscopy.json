@@ -1,0 +1,217 @@
+{
+  "resourceType": "Bundle",
+  "id": "info-knee-scope-1",
+  "meta": {
+    "profile": [
+      "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-gfe-information-bundle"
+    ]
+  },
+  "identifier": {
+    "system": "http://example.org/fhir/identifiers/bundle",
+    "value": "info-knee-scope-1"
+  },
+  "type": "collection",
+  "timestamp": "2026-10-06T09:10:00-04:00",
+  "entry": [
+    {
+      "fullUrl": "http://example.org/fhir/Patient/patient3003",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "patient3003",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient|7.0.0"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "http://example.org/identifiers/mrn",
+            "value": "PATIENT3003"
+          }
+        ],
+        "name": [
+          {
+            "text": "Alex Rivera",
+            "family": "Rivera",
+            "given": [
+              "Alex"
+            ]
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1979-11-02",
+        "address": [
+          {
+            "text": "41 Great Road, Bedford MA 01730"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/Coverage/coverage3003",
+      "resource": {
+        "resourceType": "Coverage",
+        "id": "coverage3003",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-coverage"
+          ]
+        },
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-Coverage.kind",
+            "valueCode": "insurance"
+          }
+        ],
+        "status": "active",
+        "subscriberId": "ACM778899001",
+        "beneficiary": {
+          "reference": "Patient/patient3003"
+        },
+        "relationship": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/subscriber-relationship",
+              "code": "self"
+            }
+          ]
+        },
+        "period": {
+          "start": "2026-01-01",
+          "end": "2026-12-31"
+        },
+        "payor": [
+          {
+            "reference": "Organization/payer-acme"
+          }
+        ],
+        "class": [
+          {
+            "type": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/coverage-class",
+                  "code": "plan"
+                }
+              ]
+            },
+            "value": "Acme HMO Gold",
+            "name": "Acme HMO Gold"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/Organization/payer-acme",
+      "resource": {
+        "resourceType": "Organization",
+        "id": "payer-acme",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-organization"
+          ]
+        },
+        "identifier": [
+          {
+            "type": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                  "code": "ETIN"
+                }
+              ]
+            },
+            "value": "ETIN-4400001"
+          }
+        ],
+        "active": true,
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                "code": "pay",
+                "display": "Payer"
+              }
+            ]
+          }
+        ],
+        "name": "Acme Health Plan"
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/Organization/npi-1520397849",
+      "resource": {
+        "resourceType": "Organization",
+        "id": "npi-1520397849",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-organization"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "http://hl7.org/fhir/sid/us-npi",
+            "value": "1520397849"
+          }
+        ],
+        "active": true,
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                "code": "prov",
+                "display": "Healthcare Provider"
+              }
+            ]
+          }
+        ],
+        "name": "Bedford Regional Medical Center"
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/ServiceRequest/sr-knee-scope",
+      "resource": {
+        "resourceType": "ServiceRequest",
+        "id": "sr-knee-scope",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-servicerequest"
+          ]
+        },
+        "status": "active",
+        "intent": "proposal",
+        "code": {
+          "coding": [
+            {
+              "system": "http://www.ama-assn.org/go/cpt",
+              "code": "29881",
+              "display": "Arthroscopy, knee, surgical; with meniscectomy (medial OR lateral)"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/patient3003"
+        },
+        "occurrenceDateTime": "2026-11-20",
+        "performer": [
+          {
+            "reference": "Organization/npi-1520397849"
+          }
+        ],
+        "reasonCode": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/sid/icd-10-cm",
+                "code": "M23.221",
+                "display": "Derangement of posterior horn of medial meniscus due to old tear, right knee"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
