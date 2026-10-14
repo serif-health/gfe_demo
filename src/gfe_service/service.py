@@ -26,7 +26,7 @@ class GfeService:
         result = self.engine.estimate(req)
         if not result.provider_estimates:
             raise FhirInputError(
-                "No requested service could be priced: " + "; ".join(result.warnings or ["no pricing data"]),
+                "GFE cannot be priced: " + "; ".join(result.warnings or ["no pricing data"]),
                 code="not-found", status=422,
             )
         ctx = b.PacketContext(self.settings.fhir_base, req, self.settings.disclaimer)
@@ -60,16 +60,32 @@ class GfeService:
     def fulfill_contributor_task(
         self, task: dict[str, Any], info_bundle: dict[str, Any], contributor: ProviderHint,
     ) -> dict[str, Any]:
-        """Price only this provider's lines and return the Task to PUT back to whoever assigned it."""
+        """Return a completed or failed Task for the caller to PUT back to the coordination platform."""
+        if task.get("status") not in ("requested", "received", "accepted", "failed"):
+            raise FhirInputError(
+                f"Cannot attempt pricing for a Contributor Task with status '{task.get('status')}'. "
+                "Use a requested, received, accepted, or failed Task.",
+                code="conflict", status=409, expression="Task.status",
+            )
         req = parse_information_bundle(info_bundle, tasks=[task], contributor=contributor)
         result = self.engine.estimate(req)
-        if not result.provider_estimates:
+        if result.unpriced or not result.provider_estimates:
             codes = ", ".join(f"{i.code_type} {i.code}" for i in req.items)
-            detail = result.warnings or [f"none of the requested services ({codes}) include components billed by "
-                                         f"NPI {contributor.npi} in our pricing data"]
-            reason = "Unable to produce an estimate: " + "; ".join(detail)
+            detail = [
+                f"{u.component.code_type} {u.component.code}"
+                f"{'-' + u.component.modifier if u.component.modifier else ''}"
+                f" at NPI {u.provider.npi if u.provider else contributor.npi}: {u.reason}"
+                for u in result.unpriced
+            ]
+            detail.extend(result.warnings)
+            if not detail:
+                detail = [f"none of the requested services ({codes}) include components billed by "
+                          f"NPI {contributor.npi} in our pricing data"]
+            reason = "GFE cannot be priced completely: " + "; ".join(dict.fromkeys(detail))
             tracer.warn(f"Task/{task.get('id')} -> failed: {reason}")
-            return b.fail_contributor_task(task, reason)
+            failed = b.fail_contributor_task(task, reason)
+            tracer.emit("fhir.built", resource=failed, label="Failed GFE Contributor Task (pricing unavailable)")
+            return failed
         ctx = b.PacketContext(self.settings.fhir_base, req, self.settings.disclaimer)
         # A contributor bills under one billing class; merge defensively if more than one came back.
         est = result.provider_estimates[0]

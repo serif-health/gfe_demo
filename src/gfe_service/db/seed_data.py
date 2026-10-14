@@ -4,7 +4,7 @@ All names, NPIs (Luhn-valid but fictitious), TINs and dollar amounts are made up
 "Umbrella Insurance Company" / plan "Premim Family Plus" intentionally match the HL7 PCT
 IG example resources so the IG's own GFE Information Bundle example can be priced.
 
-The one exception is ``EMERSON`` / ``bcbsma``: real, public directory entries (NPI registry,
+The exceptions are ``EMERSON`` / ``bcbsma`` and ``HOFFMAN`` / ``aetna``: real, public directory entries (NPI registry,
 payer and network names) with **no prices**. They let the live Serif Health Neuron example
 (``--prices neuron``) price a real hospital; all of its prices come from the API.
 """
@@ -19,8 +19,11 @@ CUTTER = "1182940357"       # Dr. Sam Cutter - orthopaedic surgery
 STHESIA = "1273650485"      # Dr. Ana Sthesia - anesthesiology
 THERA = "1394820173"        # Pat Thera, PT - physical therapy (no pricing data loaded)
 EMERSON = "1922103357"      # Emerson Hospital, Concord MA - real NPI, priced live from Serif Health Neuron
+HOFFMAN = "1699756924"      # Brian D. Hoffman, MD, TriHealth, Ohio - real NPI, priced live from Neuron
+CLEVELAND_CLINIC = "1154448769"   # Cleveland Clinic Foundation hospital, Cleveland OH
 
 BCBSMA_BLUE_CARE_ELECT = "50ec662e-4288-4722-9fd6-0c94041dc6a3"   # Neuron network_template_id
+AETNA_OAMC = "e077586e-51ce-4125-8921-c3e3eece1a90"
 
 TIC = "umbrella_in-network-rates_2026-09.json (TiC)"
 TIC_ACME = "acme_in-network-rates_2026-09.json (TiC)"
@@ -34,6 +37,7 @@ PAYERS = [
     ("acme", "Acme Health Plan", "ETIN-4400001", "95001", "617-555-0100",
      "1 Federal Street", "Boston", "MA", "02110"),
     ("bcbsma", "Blue Cross Blue Shield of Massachusetts", None, None, None, None, "Boston", "MA", None),
+    ("aetna", "Aetna", None, None, None, None, None, None, None),
 ]
 
 PLANS = [
@@ -43,6 +47,8 @@ PLANS = [
     ("acme-hmo-gold", "acme", "Acme HMO Gold", "Acme HMO Gold", "HMO", "Acme Core", None),
     ("bcbsma-blue-care-elect", "bcbsma", "Blue Care Elect PPO", "Blue Care Elect", "PPO", "Blue Care Elect",
      BCBSMA_BLUE_CARE_ELECT),
+    ("aetna-oamc", "aetna", "Aetna Open Access Managed Choice", "Aetna OAMC", "PPO", "Open Access Managed Choice",
+     AETNA_OAMC),
 ]
 
 PROVIDERS = [
@@ -69,6 +75,12 @@ PROVIDERS = [
     (EMERSON, "organization", "Emerson Hospital", None, None, None,
      "282N00000X", "General Acute Care Hospital", "institutional", "22",
      None, "133 Old Road to Nine Acre Corner", "Concord", "MA", "01742"),
+    (HOFFMAN, "practitioner", "Brian D. Hoffman, MD", "Brian", "Hoffman", None,
+     "207Q00000X", "Family Medicine", "professional", "11",
+     "513-398-3445", "7423 S Mason Montgomery Rd, Ste B", "Mason", "OH", "45040"),
+    (CLEVELAND_CLINIC, "organization", "Cleveland Clinic Foundation", None, None, None,
+     "282N00000X", "General Acute Care Hospital", "institutional", "22",
+     "216-986-1314", "9500 Euclid Ave", "Cleveland", "OH", "44195"),
 ]
 
 ROLE_TAXONOMIES = [
@@ -79,6 +91,10 @@ ROLE_TAXONOMIES = [
 ]
 
 CODE_DESCRIPTIONS = [
+    ("CPT", "70450", "CT head without contrast"),
+    ("CPT", "71250", "CT chest without contrast"),
+    ("CPT", "74176", "CT abdomen and pelvis without contrast"),
+    ("CPT", "99213", "Established patient office or other outpatient visit"),
     ("CPT", "70551", "Magnetic resonance (eg, proton) imaging, brain (including brain stem); without contrast material"),
     ("CPT", "73722", "Magnetic resonance (eg, proton) imaging, any joint of lower extremity; with contrast material(s)"),
     ("CPT", "29881", "Arthroscopy, knee, surgical; with meniscectomy (medial OR lateral, including any meniscal shaving)"),
@@ -98,6 +114,9 @@ CODE_DESCRIPTIONS = [
 
 SERVICE_COMPONENTS = [
     # primary_code_type, primary_code, seq, role, code_type, code, modifier, revenue_code, quantity, category
+    ("CPT", "70450", 1, "facility", "CPT", "70450", "", "0350", 1, "CT imaging"),
+    ("CPT", "71250", 1, "facility", "CPT", "71250", "", "0350", 1, "CT imaging"),
+    ("CPT", "74176", 1, "facility", "CPT", "74176", "", "0350", 1, "CT imaging"),
     ("CPT", "73722", 1, "facility", "CPT", "73722", "", "0614", 1, "Imaging"),
     ("CPT", "73722", 2, "facility", "HCPCS", "A9579", "", "0636", 15, "Imaging contrast agent"),
     ("CPT", "73722", 3, "radiologist", "CPT", "73722", "26", None, 1, "Imaging - professional interpretation"),

@@ -168,6 +168,7 @@ def contributor_task_surgeon() -> dict[str, Any]:
     return {
         "resourceType": "Task", "id": "contrib-task-surgeon-1", "meta": {"profile": [c.P_GFE_CONTRIBUTOR_TASK]},
         "extension": _task_timing(),
+        "partOf": [{"reference": "Task/demo-coordination-knee-scope-1"}],
         "status": "requested", "intent": "order",
         "code": {"coding": [{"system": c.CS_GFE_REQUEST_TYPE, "code": "gfe-contributor-task"}]},
         "requester": {"reference": f"Organization/npi-{s.BEDFORD}", "display": "Bedford Regional Medical Center"},
@@ -192,12 +193,83 @@ def emerson_brain_mri_bcbsma() -> dict[str, Any]:
     ])
 
 
+def hoffman_office_visit_aetna() -> dict[str, Any]:
+    """TriHealth physician in Ohio, priced live for Aetna OAMC."""
+    patient = {
+        "resourceType": "Patient", "id": "patient5005", "meta": {"profile": [c.P_US_CORE_PATIENT]},
+        "identifier": [{"system": "http://example.org/identifiers/mrn", "value": "PATIENT5005"}],
+        "name": [{"text": "Ratt Mobben", "family": "Mobben", "given": ["Ratt"]}],
+        "gender": "unknown", "birthDate": "1980-01-01",
+    }
+    payer = {
+        "resourceType": "Organization", "id": "payer-aetna", "meta": {"profile": [c.P_ORGANIZATION]},
+        "active": True, "type": [{"coding": [{"system": c.CS_ORG_TYPE, "code": "pay", "display": "Payer"}]}],
+        "name": "Aetna",
+    }
+    practitioner = {
+        "resourceType": "Practitioner", "id": f"npi-{s.HOFFMAN}", "meta": {"profile": [c.P_PRACTITIONER]},
+        "identifier": [{"system": c.NPI_SYSTEM, "value": s.HOFFMAN}], "active": True,
+        "name": [{"text": "Brian D. Hoffman, MD", "family": "Hoffman", "given": ["Brian", "D."], "suffix": ["MD"]}],
+    }
+    return _info_bundle("info-hoffman-office-visit-1", "2026-10-14T09:00:00-04:00", [
+        patient,
+        _coverage("coverage5005", "patient5005", "payer-aetna", "Aetna OAMC", "SYNTHETIC-AETNA-5005"),
+        payer,
+        practitioner,
+        _service_request("sr-office-visit-hoffman", "patient5005", "99213",
+                         "Established patient office or other outpatient visit",
+                         ("I10", "Essential (primary) hypertension"), "2026-11-18", f"Practitioner/npi-{s.HOFFMAN}"),
+    ])
+
+
+def cleveland_clinic_ct_aetna() -> dict[str, Any]:
+    """Illustrative multi-region CT request; no match does not establish network status."""
+    hoffman = hoffman_office_visit_aetna()
+    resources = [entry["resource"] for entry in hoffman["entry"][:3]]
+    resources.append(_provider_org(s.CLEVELAND_CLINIC, "Cleveland Clinic Foundation"))
+    for code, display in (
+        ("70450", "CT head without contrast"),
+        ("71250", "CT chest without contrast"),
+        ("74176", "CT abdomen and pelvis without contrast"),
+    ):
+        service = _service_request(
+            f"sr-ct-{code}-cleveland", "patient5005", code, display,
+            ("Z00.00", "Illustrative demo only"), "2026-11-18", f"Organization/npi-{s.CLEVELAND_CLINIC}",
+        )
+        del service["reasonCode"]
+        resources.append(service)
+    return _info_bundle("info-cleveland-clinic-ct-1", "2026-10-14T09:00:00-04:00", resources)
+
+
+def contributor_task_cleveland_clinic_ct() -> dict[str, Any]:
+    """Accepted participation, with live pricing attempted by the responder."""
+    return {
+        "resourceType": "Task", "id": "contrib-task-cleveland-clinic-ct-1",
+        "meta": {"profile": [c.P_GFE_CONTRIBUTOR_TASK]},
+        "extension": [
+            {"url": c.X_REQUEST_INITIATION_TIME, "valueInstant": "2026-10-14T09:00:00-04:00"},
+            {"url": c.X_TASK_REQUESTED_PERIOD, "valuePeriod": {"end": "2026-10-21T17:00:00-04:00"}},
+            {"url": c.X_PLANNED_SERVICE_PERIOD, "valuePeriod": {"start": "2026-11-18", "end": "2026-11-18"}},
+        ],
+        "partOf": [{"reference": "Task/demo-coordination-cleveland-clinic-ct-1"}],
+        "status": "accepted", "intent": "order",
+        "code": {"coding": [{"system": c.CS_GFE_REQUEST_TYPE, "code": "gfe-contributor-task"}]},
+        "requester": {"reference": f"Practitioner/npi-{s.HOFFMAN}", "display": "Brian D. Hoffman, MD"},
+        "owner": {"reference": f"Organization/npi-{s.CLEVELAND_CLINIC}", "display": "Cleveland Clinic Foundation",
+                  "identifier": {"system": c.NPI_SYSTEM, "value": s.CLEVELAND_CLINIC}},
+        "input": [{"type": {"coding": [{"system": c.CS_DOCUMENT_TYPE, "code": "gfe-information-bundle"}]},
+                   "valueAttachment": _attachment(cleveland_clinic_ct_aetna())}],
+    }
+
+
 EXAMPLES = {
     "information-bundle-mri-knee.json": mri_knee_insured,
     "information-bundle-brain-mri-self-pay.json": brain_mri_self_pay,
-    "information-bundle-knee-arthroscopy.json": knee_arthroscopy,
     "contributor-task-surgeon.json": contributor_task_surgeon,
     "information-bundle-emerson-brain-mri-neuron.json": emerson_brain_mri_bcbsma,
+    "information-bundle-hoffman-office-visit-neuron.json": hoffman_office_visit_aetna,
+    "information-bundle-cleveland-clinic-ct-neuron.json": cleveland_clinic_ct_aetna,
+    "contributor-task-cleveland-clinic-ct-neuron.json": contributor_task_cleveland_clinic_ct,
 }
 
 

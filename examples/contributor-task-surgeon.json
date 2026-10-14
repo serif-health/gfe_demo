@@ -25,6 +25,11 @@
       }
     }
   ],
+  "partOf": [
+    {
+      "reference": "Task/demo-coordination-knee-scope-1"
+    }
+  ],
   "status": "requested",
   "intent": "order",
   "code": {

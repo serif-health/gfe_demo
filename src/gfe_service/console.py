@@ -4,7 +4,7 @@ Levels:
   quiet   - one line per inbound request / outbound response
   summary - + parsed request, every data lookup (SQL or price API, with returned rows), engine decisions,
             priced lines, and a tree view of the FHIR resources received and sent
-  full    - + SQL text / API URLs and the raw serialized request & response bodies
+  full    - + SQL text and the raw serialized request & response bodies
 """
 
 from __future__ import annotations
@@ -279,12 +279,12 @@ class ConsoleRenderer:
         n = len(d["rows"])
         color = "blue" if n else "yellow"
         self.console.print(f"  [{color}]⛁[/] [dim]{d['elapsed_ms']:.2f} ms[/] {d['purpose']} [dim]→ {n} row(s)[/]")
-        if self.full:
+        if d.get("language", "sql") == "http":
+            self.console.print(Padding(Text(d["sql"], style="dim"), (0, 0, 0, 4)))
+        elif self.full:
             if d.get("language", "sql") == "sql":
                 self.console.print(Syntax(d["sql"], "sql", theme="ansi_dark", background_color="default", padding=(0, 4)))
                 self.console.print(f"    [dim]params: {d['params']}[/]")
-            else:
-                self.console.print(Padding(Text(d["sql"], style="dim"), (0, 0, 0, 4)))
         if not n:
             return
         rows = d["rows"][:5]

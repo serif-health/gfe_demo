@@ -454,10 +454,19 @@ def encode_attachment(resource: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _without_gfe_output(task: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        output for output in task.get("output", []) or []
+        if not any(
+            coding.get("system") == c.CS_DOCUMENT_TYPE and coding.get("code") == "gfe-bundle"
+            for coding in (output.get("type") or {}).get("coding", [])
+        )
+    ]
+
+
 def complete_contributor_task(task: dict[str, Any], gfe_bundle: dict[str, Any]) -> dict[str, Any]:
     updated = copy.deepcopy(task)
-    outputs = [o for o in updated.get("output", []) or []
-               if ((o.get("type") or {}).get("coding") or [{}])[0].get("code") != "gfe-bundle"]
+    outputs = _without_gfe_output(updated)
     outputs.append({"type": concept(c.CS_DOCUMENT_TYPE, "gfe-bundle"), "valueAttachment": encode_attachment(gfe_bundle)})
     updated["output"] = outputs
     updated["status"] = "completed"
@@ -468,6 +477,11 @@ def complete_contributor_task(task: dict[str, Any], gfe_bundle: dict[str, Any]) 
 
 def fail_contributor_task(task: dict[str, Any], reason: str) -> dict[str, Any]:
     updated = copy.deepcopy(task)
+    outputs = _without_gfe_output(updated)
+    if outputs:
+        updated["output"] = outputs
+    else:
+        updated.pop("output", None)
     updated["status"] = "failed"
     updated["statusReason"] = {"text": reason}
     updated["lastModified"] = now_instant()

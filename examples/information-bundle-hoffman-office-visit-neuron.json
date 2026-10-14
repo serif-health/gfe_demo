@@ -1,6 +1,6 @@
 {
   "resourceType": "Bundle",
-  "id": "info-knee-scope-1",
+  "id": "info-hoffman-office-visit-1",
   "meta": {
     "profile": [
       "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-gfe-information-bundle"
@@ -8,16 +8,16 @@
   },
   "identifier": {
     "system": "http://example.org/fhir/identifiers/bundle",
-    "value": "info-knee-scope-1"
+    "value": "info-hoffman-office-visit-1"
   },
   "type": "collection",
-  "timestamp": "2026-10-06T09:10:00-04:00",
+  "timestamp": "2026-10-14T09:00:00-04:00",
   "entry": [
     {
-      "fullUrl": "http://example.org/fhir/Patient/patient3003",
+      "fullUrl": "http://example.org/fhir/Patient/patient5005",
       "resource": {
         "resourceType": "Patient",
-        "id": "patient3003",
+        "id": "patient5005",
         "meta": {
           "profile": [
             "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient|7.0.0"
@@ -26,32 +26,27 @@
         "identifier": [
           {
             "system": "http://example.org/identifiers/mrn",
-            "value": "PATIENT3003"
+            "value": "PATIENT5005"
           }
         ],
         "name": [
           {
-            "text": "Alex Rivera",
-            "family": "Rivera",
+            "text": "Ratt Mobben",
+            "family": "Mobben",
             "given": [
-              "Alex"
+              "Ratt"
             ]
           }
         ],
-        "gender": "female",
-        "birthDate": "1979-11-02",
-        "address": [
-          {
-            "text": "41 Great Road, Bedford MA 01730"
-          }
-        ]
+        "gender": "unknown",
+        "birthDate": "1980-01-01"
       }
     },
     {
-      "fullUrl": "http://example.org/fhir/Coverage/coverage3003",
+      "fullUrl": "http://example.org/fhir/Coverage/coverage5005",
       "resource": {
         "resourceType": "Coverage",
-        "id": "coverage3003",
+        "id": "coverage5005",
         "meta": {
           "profile": [
             "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-coverage"
@@ -64,9 +59,9 @@
           }
         ],
         "status": "active",
-        "subscriberId": "ACM778899001",
+        "subscriberId": "SYNTHETIC-AETNA-5005",
         "beneficiary": {
-          "reference": "Patient/patient3003"
+          "reference": "Patient/patient5005"
         },
         "relationship": {
           "coding": [
@@ -82,7 +77,7 @@
         },
         "payor": [
           {
-            "reference": "Organization/payer-acme"
+            "reference": "Organization/payer-aetna"
           }
         ],
         "class": [
@@ -95,35 +90,22 @@
                 }
               ]
             },
-            "value": "Acme HMO Gold",
-            "name": "Acme HMO Gold"
+            "value": "Aetna OAMC",
+            "name": "Aetna OAMC"
           }
         ]
       }
     },
     {
-      "fullUrl": "http://example.org/fhir/Organization/payer-acme",
+      "fullUrl": "http://example.org/fhir/Organization/payer-aetna",
       "resource": {
         "resourceType": "Organization",
-        "id": "payer-acme",
+        "id": "payer-aetna",
         "meta": {
           "profile": [
             "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-organization"
           ]
         },
-        "identifier": [
-          {
-            "type": {
-              "coding": [
-                {
-                  "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
-                  "code": "ETIN"
-                }
-              ]
-            },
-            "value": "ETIN-4400001"
-          }
-        ],
         "active": true,
         "type": [
           {
@@ -136,45 +118,46 @@
             ]
           }
         ],
-        "name": "Acme Health Plan"
+        "name": "Aetna"
       }
     },
     {
-      "fullUrl": "http://example.org/fhir/Organization/npi-1520397849",
+      "fullUrl": "http://example.org/fhir/Practitioner/npi-1699756924",
       "resource": {
-        "resourceType": "Organization",
-        "id": "npi-1520397849",
+        "resourceType": "Practitioner",
+        "id": "npi-1699756924",
         "meta": {
           "profile": [
-            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-organization"
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-practitioner"
           ]
         },
         "identifier": [
           {
             "system": "http://hl7.org/fhir/sid/us-npi",
-            "value": "1520397849"
+            "value": "1699756924"
           }
         ],
         "active": true,
-        "type": [
+        "name": [
           {
-            "coding": [
-              {
-                "system": "http://terminology.hl7.org/CodeSystem/organization-type",
-                "code": "prov",
-                "display": "Healthcare Provider"
-              }
+            "text": "Brian D. Hoffman, MD",
+            "family": "Hoffman",
+            "given": [
+              "Brian",
+              "D."
+            ],
+            "suffix": [
+              "MD"
             ]
           }
-        ],
-        "name": "Bedford Regional Medical Center"
+        ]
       }
     },
     {
-      "fullUrl": "http://example.org/fhir/ServiceRequest/sr-knee-scope",
+      "fullUrl": "http://example.org/fhir/ServiceRequest/sr-office-visit-hoffman",
       "resource": {
         "resourceType": "ServiceRequest",
-        "id": "sr-knee-scope",
+        "id": "sr-office-visit-hoffman",
         "meta": {
           "profile": [
             "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-servicerequest"
@@ -186,18 +169,18 @@
           "coding": [
             {
               "system": "http://www.ama-assn.org/go/cpt",
-              "code": "29881",
-              "display": "Arthroscopy, knee, surgical; with meniscectomy (medial OR lateral)"
+              "code": "99213",
+              "display": "Established patient office or other outpatient visit"
             }
           ]
         },
         "subject": {
-          "reference": "Patient/patient3003"
+          "reference": "Patient/patient5005"
         },
-        "occurrenceDateTime": "2026-11-20",
+        "occurrenceDateTime": "2026-11-18",
         "performer": [
           {
-            "reference": "Organization/npi-1520397849"
+            "reference": "Practitioner/npi-1699756924"
           }
         ],
         "reasonCode": [
@@ -205,8 +188,8 @@
             "coding": [
               {
                 "system": "http://hl7.org/fhir/sid/icd-10-cm",
-                "code": "M23.221",
-                "display": "Derangement of posterior horn of medial meniscus due to old tear, right knee"
+                "code": "I10",
+                "display": "Essential (primary) hypertension"
               }
             ]
           }

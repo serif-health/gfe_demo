@@ -1,4 +1,4 @@
-"""In-process walkthrough of every scenario, rendered with the live trace."""
+"""Curated in-process walkthrough, rendered with the live trace."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from ..app import create_app
-from ..config import PROJECT_ROOT, Settings
+from ..config import Settings
 from ..console import make_console_sink
 from ..trace import tracer
 from . import examples as ex
@@ -36,7 +36,8 @@ def run_demo(settings: Settings, level: str, pause: bool, console: Console) -> N
     sink = make_console_sink(level, settings.trace_body_lines, console)
     tracer.add_sink(sink)
     try:
-        _run(TestClient(create_app(replace(settings, price_source="sqlite"))), settings, console, pause)
+        with TestClient(create_app(replace(settings, price_source="sqlite"))) as client:
+            _run(client, settings, console, pause)
     finally:
         tracer.remove_sink(sink)
 
@@ -46,45 +47,40 @@ def _post(client: TestClient, path: str, body: dict[str, Any], accept: str = "ap
 
 
 def _run(client: TestClient, settings: Settings, console: Console, pause: bool) -> None:
-    _banner(console, 1, "Hospital prices the services it was asked for (insured) → GFE Packet",
-            "A scheduling system sends a [bold]GFE Information Bundle[/] naming Bedford Regional for an MRI with contrast\n"
-            "and a knee brace to [cyan]POST /fhir/$gfe-estimate[/]. Bedford prices [bold]its own lines[/] (MRI, contrast,\n"
-            "brace) from contracted rates. The radiologist's read is billed separately, so it is skipped rather than\n"
-            "chased down. The answer is a [bold]GFE Packet[/] with one GFE Bundle.")
-    _wait(console, pause)
-    _post(client, "/fhir/$gfe-estimate", ex.mri_knee_insured())
-
-    _banner(console, 2, "Self-pay estimate, XML response",
+    _banner(console, 1, "Self-pay estimate, XML response",
             "No Coverage in the request → priced from the imaging center's discounted-cash price. A freestanding center\n"
             "bills the technical component (-TC) of the MRI. Same packet shape, requested as\n"
             "[bold]application/fhir+xml[/] to show the pluggable response formats.")
     _wait(console, pause)
     _post(client, "/fhir/$gfe-estimate?_format=xml", ex.brain_mri_self_pay())
 
-    _banner(console, 3, "Participating provider: GFE Contributor Task",
+    _banner(console, 2, "Participating provider: completed GFE Contributor Task",
             "Surgeon Dr. Cutter was assigned a Contributor Task for a knee arthroscopy. The Task carries the GFE\n"
             "Information Bundle as a base64 attachment. The service prices [bold]only the lines Dr. Cutter bills[/] and\n"
             "returns the Task [bold]completed[/] with a GFE Bundle in Task.output, ready to PUT back to whoever assigned it.")
     _wait(console, pause)
     _post(client, "/fhir/Task/$gfe-contribute", ex.contributor_task_surgeon())
 
-    n = 4
-    spec = PROJECT_ROOT / "examples" / "spec" / "Bundle-PCT-GFE-Information-Bundle-1.json"
-    if spec.exists():
-        _banner(console, n, "The HL7 PCT IG's own GFE Information Bundle example",
-                "The IG example names no provider, so the service's default provider (GFE_DEFAULT_PROVIDER_NPI) is used.")
-        _wait(console, pause)
-        _post(client, "/fhir/$gfe-estimate", json.loads(spec.read_text()))
-        n += 1
-
     if settings.neuron_api_key:
-        _banner(console, n, "Live prices from the Serif Health Neuron API",
-                "Same request shape, but prices come from [bold]GET /rates/v1[/] instead of SQL: Emerson Hospital's\n"
-                "BCBS MA Blue Care Elect rate for CPT 70551, plus its hospital-file gross charge. Only the price lookup\n"
-                "changed; the FHIR output is identical in shape.")
-        _wait(console, pause)
-        neuron = TestClient(create_app(replace(settings, price_source="neuron")))
-        _post(neuron, "/fhir/$gfe-estimate", ex.emerson_brain_mri_bcbsma())
+        with TestClient(create_app(replace(settings, price_source="neuron"))) as neuron:
+            _banner(console, 3, "Live hospital brain MRI",
+                    "Emerson Hospital, CPT 70551, BCBS MA Blue Care Elect. Neuron supplies the institutional price;\n"
+                    "the radiologist's separately billed interpretation is excluded.")
+            _wait(console, pause)
+            _post(neuron, "/fhir/$gfe-estimate", ex.emerson_brain_mri_bcbsma())
+
+            _banner(console, 4, "Live physician office visit",
+                    "Brian D. Hoffman, MD (TriHealth), CPT 99213, Aetna OAMC. Neuron supplies the professional price.\n"
+                    "Patient and coverage details are illustrative.")
+            _wait(console, pause)
+            _post(neuron, "/fhir/$gfe-estimate", ex.hoffman_office_visit_aetna())
+
+            _banner(console, 5, "Live CT pricing attempt: Contributor Task outcome",
+                    "Cleveland Clinic, CT head/chest/abdomen-pelvis, Aetna OAMC. Simulated accepted participation.\n"
+                    "If any billed CT line is unpriced, return [bold]Task failed[/] with an explicit reason and no GFE.\n"
+                    "No matching rate does not establish out-of-network status. Live results may change.")
+            _wait(console, pause)
+            _post(neuron, "/fhir/Task/$gfe-contribute", ex.contributor_task_cleveland_clinic_ct())
     else:
-        console.print("\n[dim]Set GFE_NEURON_API_KEY to add a live Serif Health Neuron scenario.[/]")
+        console.print("\n[dim]Set GFE_NEURON_API_KEY to add the three live Neuron scenarios (MRI, office visit, CT Task).[/]")
     console.print("\n[bold green]Demo complete.[/]")

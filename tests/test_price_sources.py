@@ -1,11 +1,13 @@
 """Swapping the price source: Serif Health Neuron (HTTP JSON) and a FHIR-native Claim.item source."""
 
+from io import StringIO
 import os
 import warnings
 from dataclasses import replace
 
 import httpx
 import pytest
+from rich.console import Console
 from conformance import check_packet, code, ext, resources
 from conftest import post
 
@@ -17,8 +19,10 @@ from gfe_service.app import create_app
 from gfe_service.db import seed_data as s
 from gfe_service.demo import examples as ex
 from gfe_service.fhir import constants as c
+from gfe_service.console import make_console_sink
 from gfe_service.pricing.neuron import NeuronPriceSource
 from gfe_service.pricing.repository import CompositeRepository, PriceQuote, SqlitePricingRepository
+from gfe_service.trace import tracer
 
 
 def _row(**kw):
@@ -71,6 +75,27 @@ def test_neuron_rate_becomes_the_gfe_line(settings):
         "70551", s.EMERSON, s.BCBSMA_BLUE_CARE_ELECT, "institutional")
 
 
+def test_summary_trace_shows_neuron_url_and_response_rows(settings):
+    calls = []
+    rows = [_row(rate=1283.5), _row(modifier_list="52", rate=641.75)]
+    client = _neuron_client(settings, rows, calls)
+    output = StringIO()
+    sink = make_console_sink("summary", console=Console(file=output, width=300, color_system=None))
+    tracer.add_sink(sink)
+    try:
+        response = post(client, "/fhir/$gfe-estimate", ex.emerson_brain_mri_bcbsma())
+    finally:
+        tracer.remove_sink(sink)
+
+    assert response.status_code == 200, response.text
+    rendered = output.getvalue()
+    assert f"GET {calls[0].url}" in rendered
+    assert "EMERSON HOSPITAL" in rendered
+    assert "1283.5" in rendered
+    assert "641.75" in rendered
+    assert "test-key" not in rendered
+
+
 def test_neuron_percentage_rate_uses_hospital_gross_charge(settings):
     client = _neuron_client(settings, [_row(negotiation_type="percentage", rate=50.0, hpt_charge_gross=2203.0)], [])
     item = _only_claim(post(client, "/fhir/$gfe-estimate", ex.emerson_brain_mri_bcbsma()).json())["item"][0]
@@ -91,6 +116,39 @@ def test_neuron_self_pay_and_unmapped_plans_use_local_prices(settings):
 def test_neuron_outage_falls_back_and_reports_unpriced(settings):
     client = _neuron_client(settings, None, [])
     assert post(client, "/fhir/$gfe-estimate", ex.emerson_brain_mri_bcbsma()).status_code == 422
+
+
+def test_cleveland_clinic_no_match_queries_neuron_for_each_ct_code(settings):
+    calls = []
+    client = _neuron_client(settings, [], calls)
+    response = post(client, "/fhir/$gfe-estimate", ex.cleveland_clinic_ct_aetna())
+    assert response.status_code == 422
+    assert response.json()["resourceType"] == "OperationOutcome"
+    assert {call.url.params["codes"] for call in calls} == {"70450", "71250", "74176"}
+    assert len(calls) == 3
+    for call in calls:
+        assert call.url.params["npis"] == s.CLEVELAND_CLINIC
+        assert call.url.params["network_template_ids"] == s.AETNA_OAMC
+        assert call.url.params["billing_classes"] == "institutional"
+
+
+def test_cleveland_clinic_no_match_returns_failed_contributor_task(settings):
+    calls = []
+    client = _neuron_client(settings, [], calls)
+    task = ex.contributor_task_cleveland_clinic_ct()
+    response = post(client, "/fhir/Task/$gfe-contribute", task)
+    assert response.status_code == 200
+    failed = response.json()
+    assert failed["resourceType"] == "Task"
+    assert failed["status"] == "failed"
+    assert "GFE cannot be priced completely" in failed["statusReason"]["text"]
+    assert failed["partOf"] == task["partOf"]
+    assert "output" not in failed
+    assert {call.url.params["codes"] for call in calls} == {"70450", "71250", "74176"}
+    assert len(calls) == 3
+    for call in calls:
+        assert call.url.params["npis"] == s.CLEVELAND_CLINIC
+        assert call.url.params["network_template_ids"] == s.AETNA_OAMC
 
 
 class _FhirNativeSource:

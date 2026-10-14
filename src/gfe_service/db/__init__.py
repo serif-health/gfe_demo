@@ -42,10 +42,13 @@ def init_db(db_path: Path | str, reset: bool = False, seed: bool = True) -> Path
         schema = resources.files(__package__).joinpath("schema.sql").read_text()
         conn.executescript(schema)
         already_seeded = conn.execute("SELECT COUNT(*) FROM providers").fetchone()[0] > 0
-        if seed and not already_seeded:
+        if seed:
             for table, ncols, rows in _INSERTS:
+                if already_seeded and table == "standard_charges":
+                    continue
                 placeholders = ", ".join("?" * ncols)
-                conn.executemany(f"INSERT INTO {table} VALUES ({placeholders})", rows)
+                conn.executemany(f"INSERT INTO {table} VALUES ({placeholders}) ON CONFLICT DO NOTHING", rows)
+        if seed and not already_seeded:
             conn.executemany(
                 f"INSERT INTO negotiated_rates ({_RATE_COLUMNS}) VALUES ({', '.join('?' * 13)})",
                 s.NEGOTIATED_RATES,

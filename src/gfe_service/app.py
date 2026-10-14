@@ -122,7 +122,7 @@ def create_app(settings: Settings | None = None, repo: PricingRepository | None 
     # -- 2. Contributor: Contributor Task -> completed Task with GFE Bundle ----------------
     @app.post("/fhir/Task/$gfe-contribute")
     async def gfe_contribute(request: Request) -> Response:
-        """Non-normative: price this provider's part of a GFE and return the completed Task.
+        """Non-normative: price this provider's part of a GFE and return a completed or failed Task.
 
         The response is the Task to return to whoever sent it (this demo does not act as a coordination platform).
         """

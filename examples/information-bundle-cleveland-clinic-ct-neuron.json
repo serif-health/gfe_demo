@@ -1,0 +1,252 @@
+{
+  "resourceType": "Bundle",
+  "id": "info-cleveland-clinic-ct-1",
+  "meta": {
+    "profile": [
+      "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-gfe-information-bundle"
+    ]
+  },
+  "identifier": {
+    "system": "http://example.org/fhir/identifiers/bundle",
+    "value": "info-cleveland-clinic-ct-1"
+  },
+  "type": "collection",
+  "timestamp": "2026-10-14T09:00:00-04:00",
+  "entry": [
+    {
+      "fullUrl": "http://example.org/fhir/Patient/patient5005",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "patient5005",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient|7.0.0"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "http://example.org/identifiers/mrn",
+            "value": "PATIENT5005"
+          }
+        ],
+        "name": [
+          {
+            "text": "Ratt Mobben",
+            "family": "Mobben",
+            "given": [
+              "Ratt"
+            ]
+          }
+        ],
+        "gender": "unknown",
+        "birthDate": "1980-01-01"
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/Coverage/coverage5005",
+      "resource": {
+        "resourceType": "Coverage",
+        "id": "coverage5005",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-coverage"
+          ]
+        },
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-Coverage.kind",
+            "valueCode": "insurance"
+          }
+        ],
+        "status": "active",
+        "subscriberId": "SYNTHETIC-AETNA-5005",
+        "beneficiary": {
+          "reference": "Patient/patient5005"
+        },
+        "relationship": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/subscriber-relationship",
+              "code": "self"
+            }
+          ]
+        },
+        "period": {
+          "start": "2026-01-01",
+          "end": "2026-12-31"
+        },
+        "payor": [
+          {
+            "reference": "Organization/payer-aetna"
+          }
+        ],
+        "class": [
+          {
+            "type": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/coverage-class",
+                  "code": "plan"
+                }
+              ]
+            },
+            "value": "Aetna OAMC",
+            "name": "Aetna OAMC"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/Organization/payer-aetna",
+      "resource": {
+        "resourceType": "Organization",
+        "id": "payer-aetna",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-organization"
+          ]
+        },
+        "active": true,
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                "code": "pay",
+                "display": "Payer"
+              }
+            ]
+          }
+        ],
+        "name": "Aetna"
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/Organization/npi-1154448769",
+      "resource": {
+        "resourceType": "Organization",
+        "id": "npi-1154448769",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-organization"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "http://hl7.org/fhir/sid/us-npi",
+            "value": "1154448769"
+          }
+        ],
+        "active": true,
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                "code": "prov",
+                "display": "Healthcare Provider"
+              }
+            ]
+          }
+        ],
+        "name": "Cleveland Clinic Foundation"
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/ServiceRequest/sr-ct-70450-cleveland",
+      "resource": {
+        "resourceType": "ServiceRequest",
+        "id": "sr-ct-70450-cleveland",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-servicerequest"
+          ]
+        },
+        "status": "active",
+        "intent": "proposal",
+        "code": {
+          "coding": [
+            {
+              "system": "http://www.ama-assn.org/go/cpt",
+              "code": "70450",
+              "display": "CT head without contrast"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/patient5005"
+        },
+        "occurrenceDateTime": "2026-11-18",
+        "performer": [
+          {
+            "reference": "Organization/npi-1154448769"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/ServiceRequest/sr-ct-71250-cleveland",
+      "resource": {
+        "resourceType": "ServiceRequest",
+        "id": "sr-ct-71250-cleveland",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-servicerequest"
+          ]
+        },
+        "status": "active",
+        "intent": "proposal",
+        "code": {
+          "coding": [
+            {
+              "system": "http://www.ama-assn.org/go/cpt",
+              "code": "71250",
+              "display": "CT chest without contrast"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/patient5005"
+        },
+        "occurrenceDateTime": "2026-11-18",
+        "performer": [
+          {
+            "reference": "Organization/npi-1154448769"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/ServiceRequest/sr-ct-74176-cleveland",
+      "resource": {
+        "resourceType": "ServiceRequest",
+        "id": "sr-ct-74176-cleveland",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-servicerequest"
+          ]
+        },
+        "status": "active",
+        "intent": "proposal",
+        "code": {
+          "coding": [
+            {
+              "system": "http://www.ama-assn.org/go/cpt",
+              "code": "74176",
+              "display": "CT abdomen and pelvis without contrast"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/patient5005"
+        },
+        "occurrenceDateTime": "2026-11-18",
+        "performer": [
+          {
+            "reference": "Organization/npi-1154448769"
+          }
+        ]
+      }
+    }
+  ]
+}

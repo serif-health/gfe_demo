@@ -32,8 +32,11 @@ the pricing decisions, the FHIR that was built, and the outbound response.
 > Built against the PCT continuous build (2.0.x / STU2 content):
 > [GFE Bundle example](https://build.fhir.org/ig/HL7/davinci-pct/Bundle-PCT-GFE-Bundle-Inst-1.json.html) ·
 > [GFE submission & AEOB overview](https://build.fhir.org/ig/HL7/davinci-pct/gfe_submission_and_aeob_overview.html).
-> Pricing, provider and patient data in this repo are **synthetic**. The one exception is the live Neuron example
-> (section 9), which uses a real hospital NPI and network, with prices fetched from the API at request time.
+> Pricing, provider and patient data in this repo are **synthetic**, except the live Neuron examples
+> (section 9), which use real provider NPIs and networks, with prices fetched from the API at request time.
+> The Hoffman and Cleveland Clinic packets use the fictional patient Ratt Mobben (DOB 1980-01-01).
+> Patient, clinical and coverage details are illustrative, not verified clinical or insurance information.
+> Neuron pricing queries do not include patient details.
 
 ---
 
@@ -87,10 +90,39 @@ That is still one provider pricing its own lines, not coordination.
 | # | Use case | Endpoint | Request | Response |
 |---|---|---|---|---|
 | 1 | **Direct estimate.** Price the requested services at the provider named on each one (`ServiceRequest.performer`), or at the provider the request names, or at the configured default. | `POST /fhir/$gfe-estimate` | [GFE Information Bundle](https://build.fhir.org/ig/HL7/davinci-pct/StructureDefinition-davinci-pct-gfe-information-bundle.html), bare or as `Parameters.resource` | [GFE Packet](https://build.fhir.org/ig/HL7/davinci-pct/StructureDefinition-davinci-pct-gfe-packet.html) with one [GFE Bundle](https://build.fhir.org/ig/HL7/davinci-pct/StructureDefinition-davinci-pct-gfe-bundle.html) per billing provider, plus a [GFE Missing Bundle](https://build.fhir.org/ig/HL7/davinci-pct/StructureDefinition-davinci-pct-gfe-missing-bundle.html) for any requested line that has no price on file |
-| 2 | **Participating provider.** You received a [GFE Contributor Task](https://build.fhir.org/ig/HL7/davinci-pct/StructureDefinition-davinci-pct-gfe-contributor-task.html) asking for your part of an estimate. | `POST /fhir/Task/$gfe-contribute` | The Contributor Task, with the Information Bundle as a base64 `Task.input` attachment. `Task.owner` (or `?npi=`) says who you are. | The same Task, `status=completed`, with `Task.output:gfe-bundle` holding your GFE Bundle. Return it to whoever sent the Task; this demo does not talk to a platform. If you bill none of the lines, the Task comes back `failed` with a reason. |
+| 2 | **Participating provider.** You received a [GFE Contributor Task](https://build.fhir.org/ig/HL7/davinci-pct/StructureDefinition-davinci-pct-gfe-contributor-task.html) asking for your part of an estimate. | `POST /fhir/Task/$gfe-contribute` | The Contributor Task, with the Information Bundle as a base64 `Task.input` attachment. `Task.owner` (or `?npi=`) says who you are. | The same Task, `status=completed`, with `Task.output:gfe-bundle` holding your complete GFE Bundle. If any line this provider bills cannot be priced, or it bills none of the lines, return `status=failed` with an explicit `statusReason`, without a GFE output. Return the Task to whoever sent it; this demo does not talk to a platform. |
 
 Both endpoints are convenience operations that this demo defines; they are not part of the IG. Their inputs and outputs
 are IG profiles, and both use the same parser, pricing engine and FHIR builders.
+
+### Unable to price: report the outcome through the Contributor Task
+
+For participation in the PCT coordination flow, send a Contributor Task, not just an Information Bundle.
+The [PCT Contributor Task status value set](https://build.fhir.org/ig/HL7/davinci-pct/ValueSet-PCTContributorTaskStatusCodes.html)
+includes `failed`: the responder attempted pricing but could not produce a complete GFE. It returns HTTP 200 with
+the **failed Task**, not a zero-dollar estimate, a completed partial estimate, or a participation rejection.
+`Task.statusReason.text` explicitly says "GFE cannot be priced completely" and lists the unpriced codes and reasons.
+The Task's identity, `partOf` coordination link, requester, owner, and inputs are preserved; stale GFE outputs are removed.
+There is no PCT pricing-unavailable reason code in the current extensible value set, so we use explanatory text
+rather than inventing a standard code.
+
+The convenience endpoint accepts `requested`, `received`, or `accepted` Tasks and permits retrying a `failed` Task.
+It performs acceptance and pricing synchronously; it does not publish the intermediate `accepted` update.
+It refuses to price draft, rejected, completed, or otherwise ineligible Tasks (409 OperationOutcome).
+It never treats missing pricing as evidence of out-of-network status or provider refusal.
+
+**Adopter integration:** retrieve the Contributor Task from your coordination platform, record acceptance there
+(`Task.status=accepted`), call this responder, and PUT the returned Task back to that platform's Task resource URL.
+HTTP 200 means the Task was processed: always inspect `Task.status`. If failed, address the pricing gap with the
+requester/provider and use the platform's retry process. This service does not persist Task updates or send notifications.
+The [coordination platform's `$gfe-retrieve`](https://build.fhir.org/ig/HL7/davinci-pct/OperationDefinition-GFE-retrieve.html)
+assembles the packet and includes a **GFE Missing Bundle for incomplete Contributor Tasks**; a failed responder does
+not attach a Missing Bundle as though it were a priced GFE.
+
+The direct `$gfe-estimate` operation remains a non-IG convenience API: no priced services produce HTTP 422
+OperationOutcome ("GFE cannot be priced"). Its per-line Missing Bundles for partially priced requests are a
+demo convenience, not the formal task-based missing-contribution workflow. Use the Contributor Task endpoint
+when integrating with GFE coordination. Coordination content is Draft in the PCT continuous build.
 
 ---
 
@@ -159,7 +191,7 @@ sequenceDiagram
     API->>Ref: billing provider (Task.owner → performer → named provider → default)
     loop each requested code
         API->>Ref: lines billed for the code (e.g. 73722 → facility, contrast, radiologist -26)
-        Note over API: keep only the lines this provider bills;<br/>skip the rest (another provider's GFE)
+        Note over API: keep only the lines this provider bills,<br/>skip the rest (another provider's GFE)
         API->>PS: find_price(provider, plan, code, modifier)
         PS-->>API: rate + charges, or a ready GFE Claim.item
     end
@@ -289,8 +321,8 @@ You need Python 3.11+ and [uv](https://docs.astral.sh/uv/). With plain `pip`, us
 ```bash
 uv sync                      # install
 uv run gfe-demo db init      # create data/pricing.db (synthetic rates, chargemaster, providers)
-uv run gfe-demo demo         # every scenario in one terminal, pausing between steps
-GFE_NEURON_API_KEY=… uv run gfe-demo demo   # …plus a live Serif Health Neuron scenario
+uv run gfe-demo demo         # self-pay/XML + completed Contributor Task, pausing between steps
+uv run --env-file .env gfe-demo demo   # adds live brain MRI, office visit, and CT Contributor Task
 ```
 
 ### Two terminals: server and client
@@ -320,17 +352,55 @@ OpenAPI docs are served at `http://localhost:8000/docs`, and the CapabilityState
 
 ### Example payloads ([examples/](examples/))
 
-| File | Scenario | Expected result |
-|---|---|---|
-| `information-bundle-mri-knee.json` | Umbrella "Premim Family Plus" at Bedford Regional: MRI knee w/ contrast + knee brace | One institutional GFE: 73722 $1,320 + contrast 15 × $6.50 + brace $310 = **$1,727.50**. The radiologist's -26 read is skipped. |
-| `information-bundle-brain-mri-self-pay.json` | No coverage, Lexington Imaging (freestanding) | 70551-TC discounted cash **$425.00** |
-| `information-bundle-knee-arthroscopy.json` | Acme HMO Gold, knee arthroscopy at Bedford | Facility 45% × $14,800 = **$6,660.00** |
-| `contributor-task-surgeon.json` | Contributor Task assigned to Dr. Cutter for that arthroscopy | Task `completed`, GFE Bundle with CPT 29881 only (**$910.00**) |
-| `information-bundle-emerson-brain-mri-neuron.json` | Real hospital (Emerson Hospital, NPI 1922103357), BCBS MA Blue Care Elect, CPT 70551 | **Needs `--prices neuron`.** Live TiC rate from Neuron ($1,283.50 as of Neuron's 2026-09 data). Without Neuron: 422, because no local prices exist. |
-| `spec/Bundle-PCT-GFE-Information-Bundle-1.json` | The IG's own example, unmodified | Priced at the default provider (Bedford) |
+#### Main demo: live Neuron pricing
 
-The Contributor Task embeds the Information Bundle as base64 (the IG's preferred encoding). It is generated from
-readable sources by `uv run gfe-demo examples`.
+All three requests use the same server and database. Start the server with `--prices neuron`; the database
+provides reference data, not prices for these providers. Live rates and availability may change.
+
+| Payload | Scenario | Response |
+|---|---|---|
+| [Emerson brain MRI](examples/information-bundle-emerson-brain-mri-neuron.json) | Emerson Hospital, NPI 1922103357; BCBS MA Blue Care Elect; CPT 70551 | Institutional GFE Packet; excludes the separately billed radiologist. |
+| [Hoffman office visit](examples/information-bundle-hoffman-office-visit-neuron.json) | Brian D. Hoffman, MD (TriHealth), NPI 1699756924; Aetna OAMC; CPT 99213 | Professional GFE Packet. |
+| [Cleveland Clinic CT Contributor Task](examples/contributor-task-cleveland-clinic-ct-neuron.json) | Cleveland Clinic Foundation, NPI 1154448769; Aetna OAMC; CT head/chest/abdomen-pelvis without contrast (70450, 71250, 74176) | HTTP 200 with Task `failed` and an explicit reason if any billed line cannot be priced; no GFE output. |
+
+**Terminal 1:** initialize or update reference data without overwriting existing entries or prices, then start
+the server. The Neuron key is loaded from your local `.env` file.
+
+```bash
+uv run gfe-demo db init
+uv run --env-file .env gfe-demo serve --prices neuron --trace summary
+```
+
+**Terminal 2:** send each request.
+
+```bash
+uv run gfe-demo send examples/information-bundle-emerson-brain-mri-neuron.json
+uv run gfe-demo send examples/information-bundle-hoffman-office-visit-neuron.json
+uv run gfe-demo send examples/contributor-task-cleveland-clinic-ct-neuron.json
+```
+
+The CT lookup returned zero records on 2026-10-14. This means **pricing unavailable**, not confirmed
+out-of-network status. The CT services are illustrative, not a clinical recommendation or a single full-body
+CT code. Task acceptance and `partOf` references are simulated; replace them with real coordination context
+for integration. This is not a participation response from Cleveland Clinic.
+
+#### Additional examples: distinct behaviors
+
+These examples use synthetic local prices unless noted.
+
+| Payload | What it adds |
+|---|---|
+| [Self-pay brain MRI](examples/information-bundle-brain-mri-self-pay.json) | No insurance coverage; freestanding technical component 70551-TC at **$425.00** cash price. Request XML with `--format xml`. |
+| [Surgeon Contributor Task](examples/contributor-task-surgeon.json) | Successful participation: Task `completed`, with only the surgeon's CPT 29881 line (**$910.00**) in its attached GFE Bundle. |
+| [Multi-line knee MRI](examples/information-bundle-mri-knee.json) | MRI, contrast quantity, and knee brace in one institutional GFE (**$1,727.50**); separately billed interpretation excluded. |
+| [Direct Cleveland Clinic CT](examples/information-bundle-cleveland-clinic-ct-neuron.json) | Readable source for the CT Task and optional direct-API comparison: HTTP 422 OperationOutcome if nothing can be priced. Requires Neuron. |
+| [HL7 IG fixture](examples/spec/Bundle-PCT-GFE-Information-Bundle-1.json) | Unmodified upstream example for conformance and default-provider tests; not part of the walkthrough. |
+
+`uv run --env-file .env gfe-demo demo` runs five scenarios in-process: self-pay/XML, completed surgeon Task,
+and the three main live cases. It does not start a listening server.
+
+Regenerate payloads with `uv run gfe-demo examples`. Contributor Tasks embed their Information Bundles as
+base64 attachments; edit the generator rather than the encoded attachment.
 
 ---
 
@@ -374,6 +444,7 @@ With `--prices neuron`, the rate lookup appears as an API call instead of SQL:
 
 ```text
   ⛁ 909.63 ms Serif Health Neuron rates 70551 @ NPI 1922103357 → 2 row(s)
+     GET https://neuron.serifhealth.com/api/rates/v1?codes=70551&npis=1922103357&network_template_ids=50ec662e-4288-4722-9fd6-0c94041dc6a3&billing_classes=institutional&additional_fields=hpt_charge_gross%2Chpt_dollar&limit=200
      entity_name       modifier_list  place_of_service  negotiation_type  rate     hpt_charge_gross  network_name
      EMERSON HOSPITAL                 22                fee schedule      1283.5   2203              Blue Care Elect
      EMERSON HOSPITAL  52             22                fee schedule      641.75   2203              Blue Care Elect
@@ -383,8 +454,8 @@ With `--prices neuron`, the rate lookup appears as an API call instead of SQL:
 | `--trace` | Shows |
 |---|---|
 | `quiet` | one line per inbound and outbound message |
-| `summary` *(default)* | plus the request tree, parsed request, every lookup (SQL or API) with its rows, engine decisions, priced lines, the estimate table, and the built FHIR tree |
-| `full` | plus SQL text / API URLs and the raw serialized request and response bodies (`--body-lines` caps the length) |
+| `summary` *(default)* | plus the request tree, parsed request, every lookup (SQL or API) with its rows, the Neuron HTTP GET URL, engine decisions, priced lines, the estimate table, and the built FHIR tree |
+| `full` | plus SQL text and the raw serialized request and response bodies (`--body-lines` caps the length) |
 | `off` | nothing |
 
 ---
@@ -538,6 +609,8 @@ Providers in the seed data:
 | 1273650485 | Ana Sthesia, MD (anesthesiology) | professional |
 | 1394820173 | Pat Thera, PT (no pricing loaded; shows a failed Contributor Task) | professional |
 | 1922103357 | Emerson Hospital, Concord MA. **Real, public NPI with no local prices**; priced live via Neuron (BCBS MA Blue Care Elect) | institutional, POS 22 |
+| 1699756924 | Brian D. Hoffman, MD, TriHealth, Mason OH. **Real, public NPI with no local prices**; priced live via Neuron (Aetna OAMC) | professional, POS 11 |
+| 1154448769 | Cleveland Clinic Foundation hospital, Cleveland OH. **Real, public NPI with no local prices**; live CT lookup via Neuron (Aetna OAMC) | institutional, POS 22 |
 
 ---
 

@@ -196,9 +196,9 @@ def send(file: Path = typer.Argument(..., exists=True, help="Request payload (JS
 def demo(trace: Level = typer.Option(Level.summary, help="Terminal trace detail."),
          pause: bool = typer.Option(sys.stdin.isatty(), help="Wait for Enter between scenarios."),
          db: Optional[Path] = typer.Option(None)) -> None:
-    """Run every scenario in-process (no server needed) with the live trace.
+    """Run the curated walkthrough in-process (no server needed) with the live trace.
 
-    Adds a live Serif Health Neuron scenario when GFE_NEURON_API_KEY is set.
+    Adds three live Neuron scenarios when GFE_NEURON_API_KEY is set.
     """
     from .demo.runner import run_demo
 
