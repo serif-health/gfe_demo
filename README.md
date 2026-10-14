@@ -604,10 +604,7 @@ Providers in the seed data:
 |---|---|---|
 | 1520397849 | Bedford Regional Medical Center (hospital) | institutional, POS 22 |
 | 1620483911 | Lexington Imaging Center (freestanding) | professional, POS 11 |
-| 1430572606 | Nora Ologist, MD (radiology) | professional |
 | 1182940357 | Sam Cutter, MD (orthopaedic surgery) | professional |
-| 1273650485 | Ana Sthesia, MD (anesthesiology) | professional |
-| 1394820173 | Pat Thera, PT (no pricing loaded; shows a failed Contributor Task) | professional |
 | 1922103357 | Emerson Hospital, Concord MA. **Real, public NPI with no local prices**; priced live via Neuron (BCBS MA Blue Care Elect) | institutional, POS 22 |
 | 1699756924 | Brian D. Hoffman, MD, TriHealth, Mason OH. **Real, public NPI with no local prices**; priced live via Neuron (Aetna OAMC) | professional, POS 11 |
 | 1154448769 | Cleveland Clinic Foundation hospital, Cleveland OH. **Real, public NPI with no local prices**; live CT lookup via Neuron (Aetna OAMC) | institutional, POS 22 |

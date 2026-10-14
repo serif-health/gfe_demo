@@ -3,7 +3,7 @@ import copy
 import pytest
 
 from conformance import check_gfe_bundle, code, decode_output, ext
-from conftest import post
+from conftest import THERA, post
 
 from gfe_service.db import seed_data as s
 from gfe_service.db import connect
@@ -42,9 +42,9 @@ def test_contributor_npi_resolved_from_owner_reference_pattern(client):
     assert post(client, "/fhir/Task/$gfe-contribute", task).json()["status"] == "completed"
 
 
-def test_contributor_with_nothing_to_bill_fails_task(client):
+def test_contributor_with_nothing_to_bill_fails_task(client, additional_test_providers):
     task = ex.contributor_task_surgeon()
-    task["owner"] = {"reference": f"Practitioner/npi-{s.THERA}"}
+    task["owner"] = {"reference": f"Practitioner/npi-{THERA}"}
     out = post(client, "/fhir/Task/$gfe-contribute", task).json()
     assert out["status"] == "failed"
     assert "billed by NPI" in out["statusReason"]["text"]

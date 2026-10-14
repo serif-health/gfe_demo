@@ -1,7 +1,7 @@
 import json
 
 from conformance import check_packet, code, ext, profile, resources
-from conftest import post
+from conftest import OLOGIST, post
 
 from gfe_service.config import PROJECT_ROOT
 from gfe_service.db import seed_data as s
@@ -42,14 +42,14 @@ def test_hospital_prices_only_its_own_lines(client):
     assert facility["diagnosis"][0]["diagnosisCodeableConcept"]["coding"][0]["code"] == "M25.561"
 
 
-def test_practitioner_named_as_performer_prices_its_professional_line(client):
+def test_practitioner_named_as_performer_prices_its_professional_line(client, additional_test_providers):
     info = ex.mri_knee_insured()
     info["entry"] = [e for e in info["entry"] if e["resource"]["resourceType"] != "DeviceRequest"]
-    info["entry"].append({"fullUrl": f"http://example.org/fhir/Practitioner/npi-{s.OLOGIST}", "resource": {
-        "resourceType": "Practitioner", "id": f"npi-{s.OLOGIST}",
-        "identifier": [{"system": c.NPI_SYSTEM, "value": s.OLOGIST}], "name": [{"text": "Nora Ologist, MD"}]}})
+    info["entry"].append({"fullUrl": f"http://example.org/fhir/Practitioner/npi-{OLOGIST}", "resource": {
+        "resourceType": "Practitioner", "id": f"npi-{OLOGIST}",
+        "identifier": [{"system": c.NPI_SYSTEM, "value": OLOGIST}], "name": [{"text": "Nora Ologist, MD"}]}})
     sr = next(e["resource"] for e in info["entry"] if e["resource"]["resourceType"] == "ServiceRequest")
-    sr["performer"] = [{"reference": f"Practitioner/npi-{s.OLOGIST}"}]
+    sr["performer"] = [{"reference": f"Practitioner/npi-{OLOGIST}"}]
 
     claims = _claims_by_provider(check_packet(post(client, "/fhir/$gfe-estimate", info).json()))
     assert set(claims) == {"Nora Ologist, MD"}

@@ -4,9 +4,8 @@ All names, NPIs (Luhn-valid but fictitious), TINs and dollar amounts are made up
 "Umbrella Insurance Company" / plan "Premim Family Plus" intentionally match the HL7 PCT
 IG example resources so the IG's own GFE Information Bundle example can be priced.
 
-The exceptions are ``EMERSON`` / ``bcbsma`` and ``HOFFMAN`` / ``aetna``: real, public directory entries (NPI registry,
-payer and network names) with **no prices**. They let the live Serif Health Neuron example
-(``--prices neuron``) price a real hospital; all of its prices come from the API.
+The Neuron examples use real, public provider and network entries with **no local prices**:
+Emerson Hospital, Brian D. Hoffman, MD, and Cleveland Clinic Foundation.
 """
 
 from __future__ import annotations
@@ -14,10 +13,7 @@ from __future__ import annotations
 # NPIs
 BEDFORD = "1520397849"      # Bedford Regional Medical Center (hospital, UB-04 / institutional)
 LEXINGTON = "1620483911"    # Lexington Imaging Center (freestanding, CMS-1500 / professional)
-OLOGIST = "1430572606"      # Dr. Nora Ologist - diagnostic radiology
 CUTTER = "1182940357"       # Dr. Sam Cutter - orthopaedic surgery
-STHESIA = "1273650485"      # Dr. Ana Sthesia - anesthesiology
-THERA = "1394820173"        # Pat Thera, PT - physical therapy (no pricing data loaded)
 EMERSON = "1922103357"      # Emerson Hospital, Concord MA - real NPI, priced live from Serif Health Neuron
 HOFFMAN = "1699756924"      # Brian D. Hoffman, MD, TriHealth, Ohio - real NPI, priced live from Neuron
 CLEVELAND_CLINIC = "1154448769"   # Cleveland Clinic Foundation hospital, Cleveland OH
@@ -43,7 +39,6 @@ PAYERS = [
 PLANS = [
     # plan_id, payer_id, plan_name, coverage_class_value, plan_type, network_name, price_network_id
     ("umbrella-premim", "umbrella", "Premim Family Plus Plan", "Premim Family Plus", "PPO", "Umbrella Select", None),
-    ("umbrella-choice", "umbrella", "Umbrella Choice PPO", "Umbrella Choice PPO", "PPO", "Umbrella Broad", None),
     ("acme-hmo-gold", "acme", "Acme HMO Gold", "Acme HMO Gold", "HMO", "Acme Core", None),
     ("bcbsma-blue-care-elect", "bcbsma", "Blue Care Elect PPO", "Blue Care Elect", "PPO", "Blue Care Elect",
      BCBSMA_BLUE_CARE_ELECT),
@@ -60,18 +55,9 @@ PROVIDERS = [
     (LEXINGTON, "organization", "Lexington Imaging Center", None, None, "042345678",
      "261QR0200X", "Radiology Clinic/Center", "professional", "11",
      "781-555-0200", "16 Hayden Avenue", "Lexington", "MA", "02421"),
-    (OLOGIST, "practitioner", "Nora Ologist, MD", "Nora", "Ologist", "043456789",
-     "2085R0202X", "Diagnostic Radiology Physician", "professional", "22",
-     "781-555-0300", "200 Springs Road", "Bedford", "MA", "01730"),
     (CUTTER, "practitioner", "Sam Cutter, MD", "Sam", "Cutter", "044567890",
      "207X00000X", "Orthopaedic Surgery Physician", "professional", "22",
      "781-555-0400", "200 Springs Road", "Bedford", "MA", "01730"),
-    (STHESIA, "practitioner", "Ana Sthesia, MD", "Ana", "Sthesia", "045678901",
-     "207L00000X", "Anesthesiology Physician", "professional", "22",
-     "781-555-0500", "200 Springs Road", "Bedford", "MA", "01730"),
-    (THERA, "practitioner", "Pat Thera, PT", "Pat", "Thera", "046789012",
-     "225100000X", "Physical Therapist", "professional", "11",
-     "781-555-0600", "55 Great Road", "Bedford", "MA", "01730"),
     (EMERSON, "organization", "Emerson Hospital", None, None, None,
      "282N00000X", "General Acute Care Hospital", "institutional", "22",
      None, "133 Old Road to Nine Acre Corner", "Concord", "MA", "01742"),
@@ -87,7 +73,6 @@ ROLE_TAXONOMIES = [
     ("radiologist", "2085R0202X"), ("radiologist", "2085D0003X"),
     ("surgeon", "207X00000X"), ("surgeon", "207XS0117X"),
     ("anesthesiologist", "207L00000X"),
-    ("physical_therapist", "225100000X"),
 ]
 
 CODE_DESCRIPTIONS = [
@@ -99,12 +84,11 @@ CODE_DESCRIPTIONS = [
     ("CPT", "73722", "Magnetic resonance (eg, proton) imaging, any joint of lower extremity; with contrast material(s)"),
     ("CPT", "29881", "Arthroscopy, knee, surgical; with meniscectomy (medial OR lateral, including any meniscal shaving)"),
     ("CPT", "01400", "Anesthesia for open or surgical arthroscopic procedures on knee joint; not otherwise specified"),
-    ("CPT", "97161", "Physical therapy evaluation: low complexity"),
     ("HCPCS", "A9579", "Injection, gadolinium-based magnetic resonance contrast agent, not otherwise specified, per ml"),
     ("HCPCS", "L1820", "Knee orthosis, elastic with condylar pads and joint, with or without patellar control, prefabricated"),
     ("RC", "0274", "Prosthetic/orthotic devices"),
     ("RC", "0360", "Operating room services - general"),
-    ("RC", "0610", "Magnetic resonance technology (MRT) - general"),
+    ("RC", "0350", "CT scan - general"),
     ("RC", "0611", "Magnetic resonance technology (MRT) - brain/brain stem"),
     ("RC", "0614", "Magnetic resonance technology (MRT) - other MRI"),
     ("RC", "0636", "Drugs requiring detailed coding"),
@@ -139,30 +123,9 @@ NEGOTIATED_RATES = [
     ("umbrella", None, BEDFORD, "041234567", "institutional", "HCPCS", "L1820", "", "fee schedule", 310.00, _EFF, _EXP, TIC),
     ("umbrella", "umbrella-premim", BEDFORD, "041234567", "institutional", "CPT", "70551", "", "negotiated", 1090.00, _EFF, _EXP, TIC),
     ("umbrella", None, BEDFORD, "041234567", "institutional", "CPT", "70551", "", "negotiated", 1180.00, _EFF, _EXP, TIC),
-    ("umbrella", "umbrella-premim", BEDFORD, "041234567", "institutional", "CPT", "29881", "", "negotiated", 5400.00, _EFF, _EXP, TIC),
-    ("umbrella", None, BEDFORD, "041234567", "institutional", "CPT", "29881", "", "negotiated", 5850.00, _EFF, _EXP, TIC),
-    ("acme", None, BEDFORD, "041234567", "institutional", "CPT", "73722", "", "percentage", 48.0, _EFF, _EXP, TIC_ACME),
-    ("acme", None, BEDFORD, "041234567", "institutional", "HCPCS", "A9579", "", "percentage", 48.0, _EFF, _EXP, TIC_ACME),
-    ("acme", None, BEDFORD, "041234567", "institutional", "CPT", "70551", "", "percentage", 48.0, _EFF, _EXP, TIC_ACME),
     ("acme", None, BEDFORD, "041234567", "institutional", "CPT", "29881", "", "percentage", 45.0, _EFF, _EXP, TIC_ACME),
-    # --- Lexington Imaging (freestanding, technical component) ---
-    ("umbrella", None, LEXINGTON, "042345678", "professional", "CPT", "70551", "TC", "negotiated", 520.00, _EFF, _EXP, TIC),
-    ("umbrella", None, LEXINGTON, "042345678", "professional", "CPT", "73722", "TC", "negotiated", 610.00, _EFF, _EXP, TIC),
-    ("umbrella", None, LEXINGTON, "042345678", "professional", "HCPCS", "A9579", "", "negotiated", 4.25, _EFF, _EXP, TIC),
-    # --- Dr. Ologist (radiology professional component) ---
-    ("umbrella", "umbrella-premim", OLOGIST, "043456789", "professional", "CPT", "73722", "26", "fee schedule", 98.00, _EFF, _EXP, TIC),
-    ("umbrella", None, OLOGIST, "043456789", "professional", "CPT", "73722", "26", "fee schedule", 104.00, _EFF, _EXP, TIC),
-    ("umbrella", None, OLOGIST, "043456789", "professional", "CPT", "70551", "26", "fee schedule", 92.00, _EFF, _EXP, TIC),
-    ("acme", None, OLOGIST, "043456789", "professional", "CPT", "70551", "26", "fee schedule", 85.00, _EFF, _EXP, TIC_ACME),
-    ("acme", None, OLOGIST, "043456789", "professional", "CPT", "73722", "26", "fee schedule", 95.00, _EFF, _EXP, TIC_ACME),
     # --- Dr. Cutter (surgeon) ---
-    ("umbrella", "umbrella-premim", CUTTER, "044567890", "professional", "CPT", "29881", "", "fee schedule", 980.00, _EFF, _EXP, TIC),
-    ("umbrella", None, CUTTER, "044567890", "professional", "CPT", "29881", "", "fee schedule", 1040.00, _EFF, _EXP, TIC),
     ("acme", None, CUTTER, "044567890", "professional", "CPT", "29881", "", "fee schedule", 910.00, _EFF, _EXP, TIC_ACME),
-    # --- Dr. Sthesia (anesthesia; flat case rate for demo simplicity) ---
-    ("umbrella", "umbrella-premim", STHESIA, "045678901", "professional", "CPT", "01400", "AA", "negotiated", 690.00, _EFF, _EXP, TIC),
-    ("umbrella", None, STHESIA, "045678901", "professional", "CPT", "01400", "AA", "negotiated", 720.00, _EFF, _EXP, TIC),
-    ("acme", None, STHESIA, "045678901", "professional", "CPT", "01400", "AA", "negotiated", 655.00, _EFF, _EXP, TIC_ACME),
 ]
 
 STANDARD_CHARGES = [
@@ -173,10 +136,5 @@ STANDARD_CHARGES = [
     (BEDFORD, "CPT", "70551", "", 2900.00, 1350.00, MRF_BEDFORD),
     (BEDFORD, "CPT", "29881", "", 14800.00, 6900.00, MRF_BEDFORD),
     (LEXINGTON, "CPT", "70551", "TC", 1100.00, 425.00, CASH_SCHEDULE),
-    (LEXINGTON, "CPT", "73722", "TC", 1350.00, 495.00, CASH_SCHEDULE),
-    (LEXINGTON, "HCPCS", "A9579", "", 15.00, 6.00, CASH_SCHEDULE),
-    (OLOGIST, "CPT", "70551", "26", 220.00, 110.00, CASH_SCHEDULE),
-    (OLOGIST, "CPT", "73722", "26", 250.00, 125.00, CASH_SCHEDULE),
     (CUTTER, "CPT", "29881", "", 2600.00, 1400.00, CASH_SCHEDULE),
-    (STHESIA, "CPT", "01400", "AA", 1500.00, 900.00, CASH_SCHEDULE),
 ]
