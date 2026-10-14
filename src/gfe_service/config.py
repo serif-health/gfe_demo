@@ -22,6 +22,11 @@ class Settings:
     )
     # Max lines of raw JSON/XML printed per body when trace=full.
     trace_body_lines: int = field(default_factory=lambda: int(os.getenv("GFE_TRACE_BODY_LINES", "80")))
+    # Where prices come from: "sqlite" (data/pricing.db) or "neuron" (Serif Health Neuron API,
+    # with the SQLite cash prices / chargemaster as fallback for self-pay and unmapped plans).
+    price_source: str = field(default_factory=lambda: os.getenv("GFE_PRICE_SOURCE", "sqlite"))
+    neuron_url: str = field(default_factory=lambda: os.getenv("GFE_NEURON_URL", "https://neuron.serifhealth.com/api"))
+    neuron_api_key: str | None = field(default_factory=lambda: os.getenv("GFE_NEURON_API_KEY") or None, repr=False)
     disclaimer: str = field(
         default_factory=lambda: os.getenv(
             "GFE_DISCLAIMER",

@@ -182,16 +182,14 @@ class PacketContext:
         return {"servicedDate": start.isoformat()}
 
     def linking_extension(self) -> dict[str, Any] | None:
-        parts = []
-        if self.request.linking_identifier:
-            parts.append({"url": "linkingIdentifier", "valueIdentifier": self.request.linking_identifier})
-        if self.request.planned_start:
-            start, end = self.request.planned_start, self.request.planned_end
-            if end and end != start:
-                parts.append({"url": "plannedPeriodOfService", "valuePeriod": {"start": start.isoformat(), "end": end.isoformat()}})
-            else:
-                parts.append({"url": "plannedPeriodOfService", "valueDate": start.isoformat()})
-        return {"url": c.X_GFE_SERVICE_LINKING_INFO, "extension": parts} if parts else None
+        if not self.request.planned_start:
+            return None
+        start, end = self.request.planned_start, self.request.planned_end
+        if end and end != start:
+            part = {"url": "plannedPeriodOfService", "valuePeriod": {"start": start.isoformat(), "end": end.isoformat()}}
+        else:
+            part = {"url": "plannedPeriodOfService", "valueDate": start.isoformat()}
+        return {"url": c.X_GFE_SERVICE_LINKING_INFO, "extension": [part]}
 
 
 # --- Claims ---------------------------------------------------------------------------------
@@ -222,13 +220,42 @@ def build_summary_claim(ctx: PacketContext, total: float) -> dict[str, Any]:
     return claim
 
 
+def _location(est: ProviderEstimate) -> dict[str, Any]:
+    pos = est.provider.place_of_service or "11"
+    return concept(c.CS_POS, pos, {"11": "Office", "22": "On Campus-Outpatient Hospital"}.get(pos))
+
+
+def _native_claim_item(ctx: PacketContext, seq: int, line: PricedLine, est: ProviderEstimate) -> dict[str, Any]:
+    """A Claim.item from a FHIR-native price source: keep it, fill only request context it can't know."""
+    item = copy.deepcopy(line.claim_item or {})
+    item["sequence"] = seq
+    extensions = item.setdefault("extension", [])
+    urls = {e.get("url") for e in extensions}
+    if c.X_SERVICE_DESCRIPTION not in urls:
+        extensions.append({"url": c.X_SERVICE_DESCRIPTION, "valueString": line.component.service_category})
+    if c.X_GFE_LINE_CTRL_NUM not in urls:
+        extensions.append({"url": c.X_GFE_LINE_CTRL_NUM, "valueIdentifier": {"value": f"{est.provider.npi}-{seq:03d}"}})
+    if "servicedDate" not in item and "servicedPeriod" not in item:
+        item.update(ctx.serviced())
+    if est.billing_class == "professional":
+        item.setdefault("locationCodeableConcept", _location(est))
+    elif "revenue" not in item:
+        item["revenue"] = {"extension": [{"url": c.X_DATA_ABSENT_REASON, "valueCode": "unknown"}]}
+    item.setdefault("quantity", {"value": line.quantity})
+    item.setdefault("net", money(line.net))
+    return item
+
+
 def _claim_item(ctx: PacketContext, seq: int, line: PricedLine, est: ProviderEstimate) -> dict[str, Any]:
+    if line.claim_item:
+        return _native_claim_item(ctx, seq, line, est)
     comp = line.component
+    source = f". Source: {line.rate_source}" if line.rate_source else ""
     item: dict[str, Any] = {
         "extension": [
             {"url": c.X_SERVICE_DESCRIPTION, "valueString": comp.service_category},
             {"url": c.X_GFE_LINE_CTRL_NUM, "valueIdentifier": {"value": f"{est.provider.npi}-{seq:03d}"}},
-            {"url": c.X_PROVIDER_EVENT_METHODOLOGY, "valueString": f"{line.methodology}. Source: {line.rate_source}"},
+            {"url": c.X_PROVIDER_EVENT_METHODOLOGY, "valueString": f"{line.methodology}{source}"},
         ],
         "sequence": seq,
     }
@@ -242,8 +269,7 @@ def _claim_item(ctx: PacketContext, seq: int, line: PricedLine, est: ProviderEst
         item["modifier"] = [concept(modifier_system(line.modifier), line.modifier)]
     item.update(ctx.serviced())
     if est.billing_class == "professional":
-        pos = est.provider.place_of_service or "11"
-        item["locationCodeableConcept"] = concept(c.CS_POS, pos, {"11": "Office", "22": "On Campus-Outpatient Hospital"}.get(pos))
+        item["locationCodeableConcept"] = _location(est)
     item["quantity"] = {"value": line.quantity}
     item["unitPrice"] = money(line.unit_price)
     item["net"] = money(line.net)

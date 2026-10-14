@@ -1,8 +1,8 @@
 """Generate the example request payloads in ``examples/``.
 
-The Information Bundles are written as readable JSON; the Contributor Task and the
-Coordination Bundle embed an Information Bundle as a base64 ``Task.input.valueAttachment``
-(the PCT IG's preferred encoding), so they are generated from the readable source.
+The Information Bundles are written as readable JSON; the Contributor Task embeds an
+Information Bundle as a base64 ``Task.input.valueAttachment`` (the PCT IG's preferred
+encoding), so it is generated from the readable source.
 """
 
 from __future__ import annotations
@@ -46,6 +46,14 @@ def _payer_acme() -> dict[str, Any]:
         "identifier": [{"type": {"coding": [{"system": c.CS_V2_0203, "code": "ETIN"}]}, "value": "ETIN-4400001"}],
         "active": True, "type": [{"coding": [{"system": c.CS_ORG_TYPE, "code": "pay", "display": "Payer"}]}],
         "name": "Acme Health Plan",
+    }
+
+
+def _payer_bcbsma() -> dict[str, Any]:
+    return {
+        "resourceType": "Organization", "id": "payer-bcbsma", "meta": {"profile": [c.P_ORGANIZATION]},
+        "active": True, "type": [{"coding": [{"system": c.CS_ORG_TYPE, "code": "pay", "display": "Payer"}]}],
+        "name": "Blue Cross Blue Shield of Massachusetts",
     }
 
 
@@ -170,44 +178,18 @@ def contributor_task_surgeon() -> dict[str, Any]:
     }
 
 
-def coordination_bundle() -> dict[str, Any]:
-    coord_full = "urn:uuid:6f1d1c55-2b1e-4a39-9a51-0c8f2f6d9a01"
-    coord = {
-        "resourceType": "Task", "id": "coord-knee-scope-1", "meta": {"profile": [c.P_GFE_COORDINATION_TASK]},
-        "extension": _task_timing(),
-        "identifier": [{"system": "http://example.org/identifiers/gfe-coordination", "value": "GFE-COORD-2026-0001"}],
-        "status": "requested", "intent": "order",
-        "code": {"coding": [{"system": c.CS_GFE_REQUEST_TYPE, "code": "gfe-coordination-task"}]},
-        "requester": {"reference": f"Organization/npi-{s.BEDFORD}", "display": "Bedford Regional Medical Center"},
-        "reasonCode": {"coding": [{"system": c.CS_GFE_REQUEST_TYPE, "code": "scheduled-request"}]},
-        "input": [{"type": {"coding": [{"system": c.CS_DOCUMENT_TYPE, "code": "gfe-information-bundle"}]},
-                   "valueAttachment": _attachment(knee_arthroscopy())}],
-    }
-
-    def contributor(tid: str, owner: str, display: str) -> dict[str, Any]:
-        return {
-            "resourceType": "Task", "id": tid, "meta": {"profile": [c.P_GFE_CONTRIBUTOR_TASK]},
-            "extension": _task_timing(),
-            "partOf": [{"reference": coord_full}],
-            "status": "requested", "intent": "order",
-            "code": {"coding": [{"system": c.CS_GFE_REQUEST_TYPE, "code": "gfe-contributor-task"}]},
-            "requester": {"reference": f"Organization/npi-{s.BEDFORD}"},
-            "owner": {"reference": owner, "display": display},
-        }
-
-    tasks = [
-        (coord_full, coord),
-        ("urn:uuid:6f1d1c55-2b1e-4a39-9a51-0c8f2f6d9a02", contributor("contrib-facility-1", f"Organization/npi-{s.BEDFORD}", "Bedford Regional Medical Center")),
-        ("urn:uuid:6f1d1c55-2b1e-4a39-9a51-0c8f2f6d9a03", contributor("contrib-surgeon-1", f"Practitioner/npi-{s.CUTTER}", "Sam Cutter, MD")),
-        ("urn:uuid:6f1d1c55-2b1e-4a39-9a51-0c8f2f6d9a04", contributor("contrib-anesthesia-1", f"Practitioner/npi-{s.STHESIA}", "Ana Sthesia, MD")),
-        ("urn:uuid:6f1d1c55-2b1e-4a39-9a51-0c8f2f6d9a05", contributor("contrib-pt-1", f"Practitioner/npi-{s.THERA}", "Pat Thera, PT")),
-    ]
-    return {
-        "resourceType": "Bundle", "id": "coordination-knee-scope-1", "meta": {"profile": [c.P_GFE_COORDINATION_BUNDLE]},
-        "identifier": {"system": f"{BASE}/identifiers/bundle", "value": "coordination-knee-scope-1"},
-        "type": "transaction", "timestamp": "2026-10-06T09:10:00-04:00",
-        "entry": [{"fullUrl": full, "resource": res, "request": {"method": "POST", "url": "Task"}} for full, res in tasks],
-    }
+def emerson_brain_mri_bcbsma() -> dict[str, Any]:
+    """A real hospital + network, priced live from Serif Health Neuron (``--prices neuron``)."""
+    patient = _patient("patient4004", "Walden", "Henry", "male", "1967-07-12", "12 Main Street, Concord MA 01742")
+    return _info_bundle("info-emerson-brain-mri-1", "2026-10-06T09:15:00-04:00", [
+        patient,
+        _coverage("coverage4004", "patient4004", "payer-bcbsma", "Blue Care Elect", "BCE123456789"),
+        _payer_bcbsma(),
+        _provider_org(s.EMERSON, "Emerson Hospital"),
+        _service_request("sr-brain-mri-emerson", "patient4004", "70551",
+                         "Magnetic resonance (eg, proton) imaging, brain (including brain stem); without contrast material",
+                         ("R51.9", "Headache, unspecified"), "2026-11-18", f"Organization/npi-{s.EMERSON}"),
+    ])
 
 
 EXAMPLES = {
@@ -215,7 +197,7 @@ EXAMPLES = {
     "information-bundle-brain-mri-self-pay.json": brain_mri_self_pay,
     "information-bundle-knee-arthroscopy.json": knee_arthroscopy,
     "contributor-task-surgeon.json": contributor_task_surgeon,
-    "coordination-bundle-knee-arthroscopy.json": coordination_bundle,
+    "information-bundle-emerson-brain-mri-neuron.json": emerson_brain_mri_bcbsma,
 }
 
 

@@ -32,6 +32,7 @@ class RequestedItem:
     quantity: float = 1.0
     reasons: list[Coding] = field(default_factory=list)
     resource: dict[str, Any] = field(default_factory=dict)
+    performer_npi: str | None = None   # provider named on the request (ServiceRequest.performer)
 
 
 @dataclass
@@ -55,8 +56,7 @@ class EstimateRequest:
     request_initiation_time: str
     planned_start: date | None = None
     planned_end: date | None = None
-    linking_identifier: dict[str, Any] | None = None
-    # Set when acting as a GFE Contributor: only price lines this provider bills.
+    # Set when answering a GFE Contributor Task: price only the lines this provider bills.
     contributor_npi: str | None = None
 
     @property
@@ -108,6 +108,8 @@ class Plan:
     payer_id: str
     plan_name: str
     network_name: str | None
+    # The price source's id for this plan's network, e.g. a Serif Health Neuron network_template_id.
+    price_network_id: str | None = None
 
 
 @dataclass
@@ -132,6 +134,8 @@ class PricedLine:
     unit_price: float
     methodology: str        # human-readable "how we got this number"
     rate_source: str        # provenance (file / feed)
+    # A PCT GFE Claim.item supplied as-is by a FHIR-native price source; used verbatim by the builder.
+    claim_item: dict[str, Any] | None = None
 
     @property
     def net(self) -> float:

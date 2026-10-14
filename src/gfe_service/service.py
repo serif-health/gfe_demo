@@ -1,4 +1,4 @@
-"""Use cases: Information Bundle -> GFE Packet, and Contributor Task -> completed Task."""
+"""Use cases: Information Bundle -> GFE Packet, and Contributor Task -> completed Task with a GFE Bundle."""
 
 from __future__ import annotations
 
@@ -12,16 +12,6 @@ from .fhir.parse import FhirInputError, index_bundle, npi_of, parse_information_
 from .pricing.engine import EstimateEngine
 from .pricing.repository import PricingRepository
 from .trace import tracer
-
-
-def linking_identifier_for(coordination_task: dict[str, Any] | None, base: str) -> dict[str, Any] | None:
-    """All GFEs for one coordinated period of care share this GFEServiceLinkingInfo identifier."""
-    if not coordination_task:
-        return None
-    for ident in coordination_task.get("identifier", []) or []:
-        if ident.get("value"):
-            return {k: ident[k] for k in ("system", "value") if k in ident}
-    return {"system": f"{base}/identifiers/gfe-coordination-task", "value": coordination_task.get("id")}
 
 
 class GfeService:
@@ -51,7 +41,7 @@ class GfeService:
         return packet
 
     def _missing_sections(self, ctx: b.PacketContext, result: EstimateResult) -> list[b.PacketSection]:
-        """Components we could not price become GFE Missing Bundles so the gap is explicit."""
+        """Lines a provider was asked for but has no price for become GFE Missing Bundles, so the gap is explicit."""
         grouped: OrderedDict[str, list] = OrderedDict()
         for u in result.unpriced:
             grouped.setdefault(u.provider.npi if u.provider else "", []).append(u)
@@ -68,18 +58,10 @@ class GfeService:
 
     # -- Contributor: Task -> completed Task with GFE Bundle -------------------------------
     def fulfill_contributor_task(
-        self,
-        task: dict[str, Any],
-        info_bundle: dict[str, Any],
-        contributor: ProviderHint,
-        coordination_task: dict[str, Any] | None = None,
+        self, task: dict[str, Any], info_bundle: dict[str, Any], contributor: ProviderHint,
     ) -> dict[str, Any]:
-        req = parse_information_bundle(
-            info_bundle,
-            tasks=[task, coordination_task] if coordination_task else [task],
-            contributor=contributor,
-            linking_identifier=linking_identifier_for(coordination_task, self.settings.fhir_base),
-        )
+        """Price only this provider's lines and return the Task to PUT back to whoever assigned it."""
+        req = parse_information_bundle(info_bundle, tasks=[task], contributor=contributor)
         result = self.engine.estimate(req)
         if not result.provider_estimates:
             codes = ", ".join(f"{i.code_type} {i.code}" for i in req.items)
@@ -98,8 +80,7 @@ class GfeService:
         return b.complete_contributor_task(task, bundle)
 
     def contributor_from_task(
-        self, task: dict[str, Any], info_bundle: dict[str, Any] | None,
-        directory_lookup: Any = None, npi_override: str | None = None,
+        self, task: dict[str, Any], info_bundle: dict[str, Any] | None, npi_override: str | None = None,
     ) -> ProviderHint:
         """Work out which provider (NPI) a Contributor Task is assigned to."""
         owner = task.get("owner") or {}
@@ -107,9 +88,6 @@ class GfeService:
         resource = None
         if not npi and info_bundle:
             resource = resolve(owner, index_bundle(info_bundle))
-            npi = npi_of(resource)
-        if not npi and directory_lookup and owner.get("reference"):
-            resource = directory_lookup(owner["reference"])
             npi = npi_of(resource)
         if not npi and owner.get("reference", "").split("/")[-1].startswith("npi-"):
             npi = owner["reference"].split("/")[-1][4:]

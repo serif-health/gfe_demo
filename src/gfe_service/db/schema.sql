@@ -4,8 +4,8 @@
 -- data company already holds:
 --   * negotiated_rates   ~ payer Transparency-in-Coverage (TiC) in-network files, normalized
 --   * standard_charges   ~ hospital price transparency (45 CFR 180) standard charges files
---   * service_components ~ "what gets billed" for an orderable service (episode / package map)
---   * provider_affiliations + role_taxonomies ~ who renders each component at a facility
+--   * service_components ~ the lines billed for an orderable service, by role (facility, radiologist...)
+--   * role_taxonomies    ~ which provider taxonomies bill a role, so each provider prices only its own lines
 
 CREATE TABLE IF NOT EXISTS payers (
     payer_id      TEXT PRIMARY KEY,
@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS plans (
     plan_name             TEXT NOT NULL,
     coverage_class_value  TEXT,      -- matched against Coverage.class[type=plan].value
     plan_type             TEXT,      -- PPO / HMO / EPO ...
-    network_name          TEXT
+    network_name          TEXT,
+    price_network_id      TEXT       -- the price source's id for this network (e.g. Serif Neuron network_template_id)
 );
 
 CREATE TABLE IF NOT EXISTS providers (
@@ -44,12 +45,6 @@ CREATE TABLE IF NOT EXISTS providers (
     city              TEXT,
     state             TEXT,
     postal_code       TEXT
-);
-
-CREATE TABLE IF NOT EXISTS provider_affiliations (
-    facility_npi      TEXT NOT NULL REFERENCES providers(npi),
-    practitioner_npi  TEXT NOT NULL REFERENCES providers(npi),
-    PRIMARY KEY (facility_npi, practitioner_npi)
 );
 
 -- Which taxonomies can fill a care-team role named in service_components.role

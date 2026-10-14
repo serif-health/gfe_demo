@@ -11,9 +11,8 @@ from . import seed_data as s
 
 _INSERTS: list[tuple[str, int, list[tuple]]] = [
     ("payers", 9, s.PAYERS),
-    ("plans", 6, s.PLANS),
+    ("plans", 7, s.PLANS),
     ("providers", 15, s.PROVIDERS),
-    ("provider_affiliations", 2, s.AFFILIATIONS),
     ("role_taxonomies", 2, s.ROLE_TAXONOMIES),
     ("code_descriptions", 3, s.CODE_DESCRIPTIONS),
     ("service_components", 10, s.SERVICE_COMPONENTS),
@@ -60,7 +59,7 @@ def init_db(db_path: Path | str, reset: bool = False, seed: bool = True) -> Path
 def load_csv(db_path: Path | str, table: str, csv_path: Path | str) -> int:
     """Append rows from a CSV whose header names match the table's columns."""
     allowed = {"negotiated_rates", "standard_charges", "providers", "service_components",
-               "provider_affiliations", "code_descriptions", "payers", "plans", "role_taxonomies"}
+               "code_descriptions", "payers", "plans", "role_taxonomies"}
     if table not in allowed:
         raise ValueError(f"table must be one of {sorted(allowed)}")
     conn = connect(db_path)

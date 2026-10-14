@@ -3,6 +3,10 @@
 All names, NPIs (Luhn-valid but fictitious), TINs and dollar amounts are made up. Payer
 "Umbrella Insurance Company" / plan "Premim Family Plus" intentionally match the HL7 PCT
 IG example resources so the IG's own GFE Information Bundle example can be priced.
+
+The one exception is ``EMERSON`` / ``bcbsma``: real, public directory entries (NPI registry,
+payer and network names) with **no prices**. They let the live Serif Health Neuron example
+(``--prices neuron``) price a real hospital; all of its prices come from the API.
 """
 
 from __future__ import annotations
@@ -14,6 +18,9 @@ OLOGIST = "1430572606"      # Dr. Nora Ologist - diagnostic radiology
 CUTTER = "1182940357"       # Dr. Sam Cutter - orthopaedic surgery
 STHESIA = "1273650485"      # Dr. Ana Sthesia - anesthesiology
 THERA = "1394820173"        # Pat Thera, PT - physical therapy (no pricing data loaded)
+EMERSON = "1922103357"      # Emerson Hospital, Concord MA - real NPI, priced live from Serif Health Neuron
+
+BCBSMA_BLUE_CARE_ELECT = "50ec662e-4288-4722-9fd6-0c94041dc6a3"   # Neuron network_template_id
 
 TIC = "umbrella_in-network-rates_2026-09.json (TiC)"
 TIC_ACME = "acme_in-network-rates_2026-09.json (TiC)"
@@ -26,13 +33,16 @@ PAYERS = [
      "680 Asylum Street", "Hartford", "CT", "06155"),
     ("acme", "Acme Health Plan", "ETIN-4400001", "95001", "617-555-0100",
      "1 Federal Street", "Boston", "MA", "02110"),
+    ("bcbsma", "Blue Cross Blue Shield of Massachusetts", None, None, None, None, "Boston", "MA", None),
 ]
 
 PLANS = [
-    # plan_id, payer_id, plan_name, coverage_class_value, plan_type, network_name
-    ("umbrella-premim", "umbrella", "Premim Family Plus Plan", "Premim Family Plus", "PPO", "Umbrella Select"),
-    ("umbrella-choice", "umbrella", "Umbrella Choice PPO", "Umbrella Choice PPO", "PPO", "Umbrella Broad"),
-    ("acme-hmo-gold", "acme", "Acme HMO Gold", "Acme HMO Gold", "HMO", "Acme Core"),
+    # plan_id, payer_id, plan_name, coverage_class_value, plan_type, network_name, price_network_id
+    ("umbrella-premim", "umbrella", "Premim Family Plus Plan", "Premim Family Plus", "PPO", "Umbrella Select", None),
+    ("umbrella-choice", "umbrella", "Umbrella Choice PPO", "Umbrella Choice PPO", "PPO", "Umbrella Broad", None),
+    ("acme-hmo-gold", "acme", "Acme HMO Gold", "Acme HMO Gold", "HMO", "Acme Core", None),
+    ("bcbsma-blue-care-elect", "bcbsma", "Blue Care Elect PPO", "Blue Care Elect", "PPO", "Blue Care Elect",
+     BCBSMA_BLUE_CARE_ELECT),
 ]
 
 PROVIDERS = [
@@ -56,11 +66,9 @@ PROVIDERS = [
     (THERA, "practitioner", "Pat Thera, PT", "Pat", "Thera", "046789012",
      "225100000X", "Physical Therapist", "professional", "11",
      "781-555-0600", "55 Great Road", "Bedford", "MA", "01730"),
-]
-
-AFFILIATIONS = [
-    (BEDFORD, OLOGIST), (BEDFORD, CUTTER), (BEDFORD, STHESIA), (BEDFORD, THERA),
-    (LEXINGTON, OLOGIST),
+    (EMERSON, "organization", "Emerson Hospital", None, None, None,
+     "282N00000X", "General Acute Care Hospital", "institutional", "22",
+     None, "133 Old Road to Nine Acre Corner", "Concord", "MA", "01742"),
 ]
 
 ROLE_TAXONOMIES = [

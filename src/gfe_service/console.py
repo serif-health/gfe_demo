@@ -2,9 +2,9 @@
 
 Levels:
   quiet   - one line per inbound request / outbound response
-  summary - + parsed request, every DB lookup (with returned rows), engine decisions,
+  summary - + parsed request, every data lookup (SQL or price API, with returned rows), engine decisions,
             priced lines, and a tree view of the FHIR resources received and sent
-  full    - + SQL text / parameters and the raw serialized request & response bodies
+  full    - + SQL text / API URLs and the raw serialized request & response bodies
 """
 
 from __future__ import annotations
@@ -254,24 +254,6 @@ class ConsoleRenderer:
         if self.full and e.data.get("traceback"):
             self.console.print(Text(e.data["traceback"], style="red dim"))
 
-    def _on_client_request(self, e: TraceEvent) -> None:
-        d = e.data
-        self.console.print()
-        self.console.rule(f"{self._prefix(e)} [bold magenta]→ CONTRIBUTOR {d['method']} {d['url']}[/]", align="left", style="magenta")
-        if d.get("body") and self.level != "quiet":
-            self.console.print(Panel(describe(d["body"]), border_style="magenta", box=box.ROUNDED, title="sent", title_align="left"))
-
-    def _on_client_response(self, e: TraceEvent) -> None:
-        d = e.data
-        color = "magenta" if d["status"] < 400 else "red"
-        body = d.get("body") or {}
-        extra = ""
-        if body.get("resourceType") == "Bundle" and body.get("type") == "searchset":
-            extra = f" · {body.get('total', len(body.get('entry', [])))} match(es)"
-        elif body.get("resourceType"):
-            extra = f" · {body['resourceType']}/{body.get('id', '')}" + (f" status={body['status']}" if "status" in body else "")
-        self.console.print(f"  [{color}]← {d['status']}[/] [dim]{d['elapsed_ms']:.1f} ms{extra}[/]")
-
     # -- Parsing / engine ------------------------------------------------------------------
     def _on_fhir_parsed(self, e: TraceEvent) -> None:
         r: EstimateRequest = e.data["request"]
@@ -290,8 +272,6 @@ class ConsoleRenderer:
             t.add_row("providers named", ", ".join(f"{h.kind} NPI {h.npi}" for h in r.provider_hints))
         if r.contributor_npi:
             t.add_row("acting as", f"[bold]GFE Contributor[/] NPI {r.contributor_npi}")
-        if r.linking_identifier:
-            t.add_row("linking id", str(r.linking_identifier.get("value")))
         self.console.print(t)
 
     def _on_db_query(self, e: TraceEvent) -> None:
@@ -300,8 +280,11 @@ class ConsoleRenderer:
         color = "blue" if n else "yellow"
         self.console.print(f"  [{color}]⛁[/] [dim]{d['elapsed_ms']:.2f} ms[/] {d['purpose']} [dim]→ {n} row(s)[/]")
         if self.full:
-            self.console.print(Syntax(d["sql"], "sql", theme="ansi_dark", background_color="default", padding=(0, 4)))
-            self.console.print(f"    [dim]params: {d['params']}[/]")
+            if d.get("language", "sql") == "sql":
+                self.console.print(Syntax(d["sql"], "sql", theme="ansi_dark", background_color="default", padding=(0, 4)))
+                self.console.print(f"    [dim]params: {d['params']}[/]")
+            else:
+                self.console.print(Padding(Text(d["sql"], style="dim"), (0, 0, 0, 4)))
         if not n:
             return
         rows = d["rows"][:5]

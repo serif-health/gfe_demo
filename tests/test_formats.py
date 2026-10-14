@@ -47,9 +47,9 @@ def test_xml_packet_follows_fhir_xml_rules(client):
     assert ext.find("f:valueInstant", NS).get("value")
     # nested GFE Bundles and Claim items survive the conversion
     claims = root.findall(".//f:Claim", NS)
-    assert len(claims) == 4
+    assert len(claims) == 2  # GFE Summary + Bedford's institutional claim
     nets = [float(n.get("value")) for n in root.findall(".//f:Claim/f:item/f:net/f:value", NS)]
-    assert sorted(nets) == [97.5, 98.0, 310.0, 1320.0]
+    assert sorted(nets) == [97.5, 310.0, 1320.0]
 
 
 def test_406_on_unsupported_format(client):

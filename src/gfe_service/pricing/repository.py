@@ -1,9 +1,26 @@
-"""Pricing data access.
+"""Pricing data access: the seam a provider or data company plugs its own data into.
 
-``PricingRepository`` is the seam a provider or data company would re-implement against
-their own store (Postgres, Snowflake, BigQuery, an internal pricing API...). The SQLite
-implementation emits a ``db.query`` trace event for every lookup so the terminal shows
-exactly which data was fetched to build each estimate.
+Two small protocols:
+
+* ``ReferenceData`` - who/what is being priced: payer + plan from the Coverage, the provider
+  record for an NPI (billing class, taxonomy), which lines a provider bills for an orderable
+  service, and code display names. Usually a small local table you maintain.
+* ``PriceSource`` - **one call**: "what does this provider get paid for this code under this
+  plan, and what are its published charges?" This is the piece to swap for a pricing API.
+
+A price source answers with a ``PriceQuote`` in one of two shapes:
+
+1. **Pricing terms** (``rate`` and/or ``charge``) - for sources that return their own JSON or
+   rows (SQL, the Serif Health Neuron API in ``neuron.py``...). The engine runs the rate
+   waterfall (plan-specific > payer-wide, % of charges, self-pay cash, gross charge).
+2. **A FHIR-native GFE line** (``claim_item``) - for sources that can already return a
+   Da Vinci PCT GFE ``Claim.item`` (``productOrService``, ``modifier``, ``revenue``,
+   ``quantity``, ``unitPrice``, ``net``, ``providerEventMethodology``...). It is placed in the
+   GFE Claim as-is, with no translation step.
+
+``SqlitePricingRepository`` implements both protocols over ``data/pricing.db``;
+``CompositeRepository`` pairs local reference data with any other ``PriceSource``. Every
+lookup emits a ``db.query`` trace event so the terminal shows exactly what was fetched.
 """
 
 from __future__ import annotations
@@ -24,9 +41,11 @@ from ..trace import tracer
 
 @dataclass
 class Rate:
-    negotiated_type: str
-    negotiated_rate: float
-    plan_id: str | None
+    """An in-network negotiated rate (TiC ``negotiated_type`` / ``negotiated_rate``)."""
+
+    negotiated_type: str        # negotiated | fee schedule | percentage | per diem
+    negotiated_rate: float      # dollars, or percent of gross charge when negotiated_type == percentage
+    plan_specific: bool         # True: this plan / network; False: every plan of the payer
     source: str
     effective_date: str
     expiration_date: str
@@ -35,26 +54,64 @@ class Rate:
 
 @dataclass
 class StandardCharge:
+    """A provider's published charges (hospital price transparency file / practice fee schedule)."""
+
     gross_charge: float | None
     discounted_cash: float | None
     source: str
 
 
-class PricingRepository(Protocol):
+@dataclass
+class PriceQuote:
+    rate: Rate | None = None
+    charge: StandardCharge | None = None
+    claim_item: dict[str, Any] | None = None   # FHIR-native: a ready PCT GFE Claim.item
+
+
+class ReferenceData(Protocol):
     def find_payer(self, etins: list[str], name: str | None) -> Payer | None: ...
     def find_plan(self, payer_id: str, class_values: list[str]) -> Plan | None: ...
     def get_provider(self, npi: str) -> Provider | None: ...
-    def list_providers(self) -> list[Provider]: ...
     def service_components(self, code_type: str, code: str) -> list[Component]: ...
     def role_taxonomies(self, role: str) -> list[str]: ...
-    def affiliated_practitioners(self, facility_npi: str, taxonomies: list[str]) -> list[Provider]: ...
-    def affiliated_facilities(self, practitioner_npi: str) -> list[Provider]: ...
     def code_display(self, code_type: str, code: str) -> str | None: ...
-    def find_rate(
-        self, *, npi: str, payer_id: str, plan_id: str | None, billing_class: str,
-        code_type: str, code: str, modifier: str, service_date: date,
-    ) -> Rate | None: ...
-    def find_standard_charge(self, npi: str, code_type: str, code: str, modifier: str) -> StandardCharge | None: ...
+
+
+class PriceSource(Protocol):
+    def find_price(
+        self, *, provider: Provider, payer: Payer | None, plan: Plan | None,
+        code_type: str, code: str, modifier: str, quantity: float, service_date: date,
+    ) -> PriceQuote:
+        """``payer`` is None for self-pay. Return an empty ``PriceQuote()`` when nothing is on file."""
+        ...
+
+
+class PricingRepository(ReferenceData, PriceSource, Protocol):
+    ...
+
+
+class CompositeRepository:
+    """Local reference data + a separate price source (e.g. ``NeuronPriceSource``)."""
+
+    def __init__(self, reference: ReferenceData, prices: PriceSource) -> None:
+        self.reference = reference
+        self.prices = prices
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.reference, name)
+
+    def find_price(self, **kwargs: Any) -> PriceQuote:
+        return self.prices.find_price(**kwargs)
+
+
+def trace_lookup(purpose: str, query: str, params: Any, columns: list[str], rows: list[tuple],
+                 elapsed_ms: float, language: str = "sql") -> None:
+    tracer.emit("db.query", purpose=purpose, sql=query, params=params, columns=columns, rows=rows,
+                elapsed_ms=elapsed_ms, language=language)
+
+
+def line_label(code_type: str, code: str, modifier: str) -> str:
+    return f"{code_type} {code}{'-' + modifier if modifier else ''}"
 
 
 _PROVIDER_COLS = (
@@ -71,28 +128,15 @@ class SqlitePricingRepository:
     def close(self) -> None:
         self._conn.close()
 
-    # -- traced query helper ---------------------------------------------------------------
     def _query(self, purpose: str, sql: str, params: tuple | list = ()) -> list[sqlite3.Row]:
         sql = textwrap.dedent(sql).strip()
         start = time.perf_counter()
         rows = self._conn.execute(sql, tuple(params)).fetchall()
-        elapsed_ms = (time.perf_counter() - start) * 1000
-        tracer.emit(
-            "db.query",
-            purpose=purpose,
-            sql=sql,
-            params=list(params),
-            columns=list(rows[0].keys()) if rows else [],
-            rows=[tuple(r) for r in rows],
-            elapsed_ms=elapsed_ms,
-        )
+        trace_lookup(purpose, sql, list(params), list(rows[0].keys()) if rows else [],
+                     [tuple(r) for r in rows], (time.perf_counter() - start) * 1000)
         return rows
 
-    @staticmethod
-    def _provider(row: sqlite3.Row | None) -> Provider | None:
-        return Provider(**dict(row)) if row else None
-
-    # -- lookups ---------------------------------------------------------------------------
+    # -- ReferenceData ---------------------------------------------------------------------
     def find_payer(self, etins: list[str], name: str | None) -> Payer | None:
         rows = self._query(
             "resolve payer from Coverage.payor Organization",
@@ -110,7 +154,7 @@ class SqlitePricingRepository:
         rows = self._query(
             "resolve plan from Coverage.class",
             """
-            SELECT plan_id, payer_id, plan_name, network_name FROM plans
+            SELECT plan_id, payer_id, plan_name, network_name, price_network_id FROM plans
             WHERE payer_id = ?
               AND (coverage_class_value IN (SELECT value FROM json_each(?))
                    OR plan_name IN (SELECT value FROM json_each(?)))
@@ -122,15 +166,11 @@ class SqlitePricingRepository:
 
     def get_provider(self, npi: str) -> Provider | None:
         rows = self._query("look up provider by NPI", f"SELECT {_PROVIDER_COLS} FROM providers WHERE npi = ?", (npi,))
-        return self._provider(rows[0] if rows else None)
-
-    def list_providers(self) -> list[Provider]:
-        rows = self._conn.execute(f"SELECT {_PROVIDER_COLS} FROM providers ORDER BY npi").fetchall()
-        return [Provider(**dict(r)) for r in rows]
+        return Provider(**dict(rows[0])) if rows else None
 
     def service_components(self, code_type: str, code: str) -> list[Component]:
         rows = self._query(
-            f"expand {code_type} {code} into billable components",
+            f"lines billed for {code_type} {code}",
             """
             SELECT role, code_type, code, modifier, revenue_code, quantity, service_category
             FROM service_components
@@ -143,39 +183,11 @@ class SqlitePricingRepository:
 
     def role_taxonomies(self, role: str) -> list[str]:
         rows = self._query(
-            f"taxonomies that can fill role '{role}'",
+            f"taxonomies that bill as '{role}'",
             "SELECT taxonomy_code FROM role_taxonomies WHERE role = ?",
             (role,),
         )
         return [r["taxonomy_code"] for r in rows]
-
-    def affiliated_practitioners(self, facility_npi: str, taxonomies: list[str]) -> list[Provider]:
-        cols = ", ".join(f"p.{c.strip()}" for c in _PROVIDER_COLS.split(","))
-        rows = self._query(
-            "find affiliated practitioner for role",
-            f"""
-            SELECT {cols}
-            FROM provider_affiliations a JOIN providers p ON p.npi = a.practitioner_npi
-            WHERE a.facility_npi = ? AND p.taxonomy_code IN (SELECT value FROM json_each(?))
-            ORDER BY p.family_name, p.npi
-            """,
-            (facility_npi, _json(taxonomies)),
-        )
-        return [Provider(**dict(r)) for r in rows]
-
-    def affiliated_facilities(self, practitioner_npi: str) -> list[Provider]:
-        cols = ", ".join(f"p.{c.strip()}" for c in _PROVIDER_COLS.split(","))
-        rows = self._query(
-            "find facility where practitioner renders",
-            f"""
-            SELECT {cols}
-            FROM provider_affiliations a JOIN providers p ON p.npi = a.facility_npi
-            WHERE a.practitioner_npi = ?
-            ORDER BY p.npi
-            """,
-            (practitioner_npi,),
-        )
-        return [Provider(**dict(r)) for r in rows]
 
     def code_display(self, code_type: str, code: str) -> str | None:
         row = self._conn.execute(
@@ -183,34 +195,44 @@ class SqlitePricingRepository:
         ).fetchone()
         return row["display"] if row else None
 
-    def find_rate(
-        self, *, npi: str, payer_id: str, plan_id: str | None, billing_class: str,
-        code_type: str, code: str, modifier: str, service_date: date,
-    ) -> Rate | None:
+    # -- PriceSource -----------------------------------------------------------------------
+    def find_price(
+        self, *, provider: Provider, payer: Payer | None, plan: Plan | None,
+        code_type: str, code: str, modifier: str, quantity: float = 1, service_date: date,
+    ) -> PriceQuote:
+        rate = None
+        if payer:
+            rate = self._find_rate(provider, payer, plan, code_type, code, modifier, service_date)
+        return PriceQuote(rate=rate, charge=self._find_charge(provider.npi, code_type, code, modifier))
+
+    def _find_rate(self, provider: Provider, payer: Payer, plan: Plan | None, code_type: str, code: str,
+                   modifier: str, service_date: date) -> Rate | None:
         # Plan-specific rates beat payer-wide rates; in-effect rates beat stale ones.
         rows = self._query(
-            f"negotiated rate {code_type} {code}{'-' + modifier if modifier else ''} @ NPI {npi}",
+            f"negotiated rate {line_label(code_type, code, modifier)} @ NPI {provider.npi}",
             """
-            SELECT negotiated_type, negotiated_rate, plan_id, source, effective_date, expiration_date,
+            SELECT negotiated_type, negotiated_rate, plan_id IS NOT NULL AS plan_specific, source,
+                   effective_date, expiration_date,
                    (? BETWEEN effective_date AND expiration_date) AS in_effect
             FROM negotiated_rates
             WHERE npi = ? AND payer_id = ? AND billing_class = ?
               AND code_type = ? AND code = ? AND modifier = ?
               AND (plan_id = ? OR plan_id IS NULL)
-            ORDER BY in_effect DESC, (plan_id IS NULL) ASC, effective_date DESC
+            ORDER BY in_effect DESC, plan_specific DESC, effective_date DESC
             LIMIT 1
             """,
-            (service_date.isoformat(), npi, payer_id, billing_class, code_type, code, modifier, plan_id),
+            (service_date.isoformat(), provider.npi, payer.payer_id, provider.billing_class,
+             code_type, code, modifier, plan.plan_id if plan else None),
         )
         if not rows:
             return None
         r = dict(rows[0])
-        r["in_effect"] = bool(r["in_effect"])
+        r["plan_specific"], r["in_effect"] = bool(r["plan_specific"]), bool(r["in_effect"])
         return Rate(**r)
 
-    def find_standard_charge(self, npi: str, code_type: str, code: str, modifier: str) -> StandardCharge | None:
+    def _find_charge(self, npi: str, code_type: str, code: str, modifier: str) -> StandardCharge | None:
         rows = self._query(
-            f"standard charges {code_type} {code}{'-' + modifier if modifier else ''} @ NPI {npi}",
+            f"standard charges {line_label(code_type, code, modifier)} @ NPI {npi}",
             """
             SELECT gross_charge, discounted_cash, source FROM standard_charges
             WHERE npi = ? AND code_type = ? AND code = ? AND modifier = ?

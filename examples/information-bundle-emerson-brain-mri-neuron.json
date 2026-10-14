@@ -1,0 +1,204 @@
+{
+  "resourceType": "Bundle",
+  "id": "info-emerson-brain-mri-1",
+  "meta": {
+    "profile": [
+      "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-gfe-information-bundle"
+    ]
+  },
+  "identifier": {
+    "system": "http://example.org/fhir/identifiers/bundle",
+    "value": "info-emerson-brain-mri-1"
+  },
+  "type": "collection",
+  "timestamp": "2026-10-06T09:15:00-04:00",
+  "entry": [
+    {
+      "fullUrl": "http://example.org/fhir/Patient/patient4004",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "patient4004",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient|7.0.0"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "http://example.org/identifiers/mrn",
+            "value": "PATIENT4004"
+          }
+        ],
+        "name": [
+          {
+            "text": "Henry Walden",
+            "family": "Walden",
+            "given": [
+              "Henry"
+            ]
+          }
+        ],
+        "gender": "male",
+        "birthDate": "1967-07-12",
+        "address": [
+          {
+            "text": "12 Main Street, Concord MA 01742"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/Coverage/coverage4004",
+      "resource": {
+        "resourceType": "Coverage",
+        "id": "coverage4004",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-coverage"
+          ]
+        },
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-Coverage.kind",
+            "valueCode": "insurance"
+          }
+        ],
+        "status": "active",
+        "subscriberId": "BCE123456789",
+        "beneficiary": {
+          "reference": "Patient/patient4004"
+        },
+        "relationship": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/subscriber-relationship",
+              "code": "self"
+            }
+          ]
+        },
+        "period": {
+          "start": "2026-01-01",
+          "end": "2026-12-31"
+        },
+        "payor": [
+          {
+            "reference": "Organization/payer-bcbsma"
+          }
+        ],
+        "class": [
+          {
+            "type": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/coverage-class",
+                  "code": "plan"
+                }
+              ]
+            },
+            "value": "Blue Care Elect",
+            "name": "Blue Care Elect"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/Organization/payer-bcbsma",
+      "resource": {
+        "resourceType": "Organization",
+        "id": "payer-bcbsma",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-organization"
+          ]
+        },
+        "active": true,
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                "code": "pay",
+                "display": "Payer"
+              }
+            ]
+          }
+        ],
+        "name": "Blue Cross Blue Shield of Massachusetts"
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/Organization/npi-1922103357",
+      "resource": {
+        "resourceType": "Organization",
+        "id": "npi-1922103357",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-organization"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "http://hl7.org/fhir/sid/us-npi",
+            "value": "1922103357"
+          }
+        ],
+        "active": true,
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                "code": "prov",
+                "display": "Healthcare Provider"
+              }
+            ]
+          }
+        ],
+        "name": "Emerson Hospital"
+      }
+    },
+    {
+      "fullUrl": "http://example.org/fhir/ServiceRequest/sr-brain-mri-emerson",
+      "resource": {
+        "resourceType": "ServiceRequest",
+        "id": "sr-brain-mri-emerson",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-pct/StructureDefinition/davinci-pct-servicerequest"
+          ]
+        },
+        "status": "active",
+        "intent": "proposal",
+        "code": {
+          "coding": [
+            {
+              "system": "http://www.ama-assn.org/go/cpt",
+              "code": "70551",
+              "display": "Magnetic resonance (eg, proton) imaging, brain (including brain stem); without contrast material"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/patient4004"
+        },
+        "occurrenceDateTime": "2026-11-18",
+        "performer": [
+          {
+            "reference": "Organization/npi-1922103357"
+          }
+        ],
+        "reasonCode": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/sid/icd-10-cm",
+                "code": "R51.9",
+                "display": "Headache, unspecified"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

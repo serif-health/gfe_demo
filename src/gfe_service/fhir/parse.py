@@ -5,7 +5,6 @@ from __future__ import annotations
 import base64
 import binascii
 import json
-from collections.abc import Callable
 from datetime import date, datetime, timezone
 from typing import Any
 
@@ -128,24 +127,29 @@ def decode_attachment(attachment: dict[str, Any], where: str) -> dict[str, Any]:
         raise FhirInputError(f"Attachment is not base64-encoded FHIR JSON: {exc}", expression=where) from exc
 
 
-def information_bundle_from_task(
-    task: dict[str, Any], resolver: Callable[[str], dict[str, Any] | None] | None = None
-) -> dict[str, Any] | None:
-    """Return the GFE Information Bundle carried in ``Task.input`` (attachment or reference)."""
+def information_bundle_from_task(task: dict[str, Any]) -> dict[str, Any] | None:
+    """Return the GFE Information Bundle carried in ``Task.input`` as a base64 attachment."""
     for i, inp in enumerate(task.get("input", []) or []):
         coding = first_coding(inp.get("type")) or {}
-        if coding.get("code") != "gfe-information-bundle":
-            continue
-        if "valueAttachment" in inp:
+        if coding.get("code") == "gfe-information-bundle" and "valueAttachment" in inp:
             return decode_attachment(inp["valueAttachment"], f"Task.input[{i}].valueAttachment")
-        if "valueReference" in inp and resolver:
-            return resolver(inp["valueReference"].get("reference", ""))
     return None
 
 
 def planned_period_from_task(task: dict[str, Any] | None) -> tuple[date | None, date | None]:
     period = ext_value(task, c.X_PLANNED_SERVICE_PERIOD) or {}
     return to_date(period.get("start")), to_date(period.get("end"))
+
+
+def claim_item_terms(item: dict[str, Any], default_quantity: float) -> tuple[float, float, str | None]:
+    """(unitPrice, quantity, providerEventMethodology) from a PCT GFE ``Claim.item``."""
+    try:
+        unit_price = float((item.get("unitPrice") or {})["value"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise FhirInputError("Price source returned a Claim.item without unitPrice.value",
+                             code="processing", status=502) from exc
+    quantity = float((item.get("quantity") or {}).get("value") or default_quantity)
+    return unit_price, quantity, ext_value(item, c.X_PROVIDER_EVENT_METHODOLOGY)
 
 
 # --- Information Bundle -> EstimateRequest --------------------------------------------------
@@ -163,7 +167,6 @@ def parse_information_bundle(
     *,
     tasks: list[dict[str, Any]] | None = None,
     contributor: ProviderHint | None = None,
-    linking_identifier: dict[str, Any] | None = None,
 ) -> EstimateRequest:
     if bundle.get("resourceType") != "Bundle":
         raise FhirInputError(f"Expected a GFE Information Bundle, got {bundle.get('resourceType')}", expression="resourceType")
@@ -225,19 +228,21 @@ def parse_information_bundle(
     hints: list[ProviderHint] = []
     seen: set[str] = set()
 
-    def add_hint(res: dict[str, Any] | None) -> None:
+    def add_hint(res: dict[str, Any] | None) -> str | None:
         if not res or res.get("resourceType") not in ("Organization", "Practitioner"):
-            return
+            return None
         if res["resourceType"] == "Organization" and (res is payer_org or is_payer_org(res)):
-            return
+            return None
         npi = npi_of(res)
         if npi and npi not in seen:
             seen.add(npi)
             hints.append(ProviderHint(npi=npi, kind=res["resourceType"].lower(), resource=res))
+        return npi
 
     for item in items:
         for perf in item.resource.get("performer", []) or []:
-            add_hint(resolve(perf, idx))
+            npi = add_hint(resolve(perf, idx))
+            item.performer_npi = item.performer_npi or npi
     for role in by_type.get("PractitionerRole", []):
         add_hint(resolve(role.get("practitioner"), idx))
         add_hint(resolve(role.get("organization"), idx))
@@ -271,7 +276,7 @@ def parse_information_bundle(
     request = EstimateRequest(
         info_bundle=bundle, patient=patient, coverage=coverage, payer_org=payer_org, items=items,
         provider_hints=hints, diagnoses=diagnoses, request_initiation_time=initiation,
-        planned_start=planned_start, planned_end=planned_end, linking_identifier=linking_identifier,
+        planned_start=planned_start, planned_end=planned_end,
         contributor_npi=contributor.npi if contributor else None,
     )
     if contributor and contributor.npi not in seen:

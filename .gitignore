@@ -8,3 +8,9 @@ build/
 data/*.db
 data/*.db-*
 .DS_Store
+.ruff_cache/
+
+# local secrets (e.g. GFE_NEURON_API_KEY) - never commit
+.env
+.env.*
+*.key
